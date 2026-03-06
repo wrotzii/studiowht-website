@@ -106,7 +106,7 @@ const AdminQRRedirect = () => {
           </div>
           <Button onClick={handleSave} className="flex items-center gap-2 bg-white text-black hover:bg-gray-200 transition-all duration-300 hover:scale-105 hover:shadow-[0_0_15px_rgba(255,255,255,0.3)]">
             <Save className="w-4 h-4" />
-            Save Changes
+            Publish
           </Button>
         </div>
 
