@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit2, Mail, Phone, MapPin, X, ExternalLink, Calendar, User, Briefcase, Wrench } from 'lucide-react';
+import { Mail, Phone, MapPin, X, ExternalLink, Calendar, User, Briefcase, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,7 +10,7 @@ import { useContent } from '@/context/ContentContext';
 
 // --- Portfolio Section Components ---
 
-const ProjectCard = ({ image, title, category, description, onClick }: any) => (
+const ProjectCard = React.memo(({ image, title, category, description, onClick }: any) => (
   <motion.div 
     whileHover={{ y: -10 }}
     onClick={onClick}
@@ -29,7 +29,7 @@ const ProjectCard = ({ image, title, category, description, onClick }: any) => (
       <p className="text-white/40 text-sm line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{description}</p>
     </div>
   </motion.div>
-);
+));
 
 const ProjectModal = ({ isOpen, onClose, project }: any) => {
   if (!project) return null;
@@ -93,18 +93,15 @@ const ProjectModal = ({ isOpen, onClose, project }: any) => {
 
 export const PortfolioSection = () => {
   const [selectedProject, setSelectedProject] = useState(null);
-  const { content, isEditing, setActiveEditSection, setActiveEditItem } = useContent();
-  const { title, subtitle, description, projects } = content.portfolio;
+  const { content } = useContent();
+  const { title, subtitle, description, projects } = content?.portfolio || { title: '', subtitle: '', description: '', projects: [] };
+
+  if (!projects || projects.length === 0) {
+    return <section id="portfolio" className="py-24 relative group"><div className="container mx-auto px-6"><h2 className="text-4xl font-bold">No projects available</h2></div></section>;
+  }
 
   return (
     <section id="portfolio" className="py-24 relative group">
-      {isEditing && (
-        <div className="absolute top-6 right-6 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button onClick={() => setActiveEditSection('portfolio')} variant="secondary" size="sm" className="shadow-lg">
-            <Edit2 className="w-4 h-4 mr-2" /> Edit Portfolio
-          </Button>
-        </div>
-      )}
       <div className="container mx-auto px-6">
         <div className="mb-16">
           {subtitle && <p className="text-sm uppercase tracking-widest text-gray-400 mb-2">{subtitle}</p>}
@@ -112,16 +109,9 @@ export const PortfolioSection = () => {
           <p className="text-gray-400 max-w-2xl text-lg">{description}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project: any, index: number) => (
-            <div key={project.id} className="relative group/card">
-              {isEditing && (
-                <div className="absolute top-4 right-4 z-50 opacity-0 group-hover/card:opacity-100 transition-opacity">
-                  <Button onClick={(e) => { e.stopPropagation(); setActiveEditSection('project'); setActiveEditItem(index); }} variant="secondary" size="sm" className="shadow-lg">
-                    <Edit2 className="w-4 h-4 mr-2" /> Edit
-                  </Button>
-                </div>
-              )}
-              <ProjectCard {...project} onClick={() => !isEditing && setSelectedProject(project)} />
+          {projects.map((project: any) => (
+            <div key={project.id || project.title} className="relative group/card">
+              <ProjectCard {...project} onClick={() => setSelectedProject(project)} />
             </div>
           ))}
         </div>
@@ -134,18 +124,15 @@ export const PortfolioSection = () => {
 // --- About Section ---
 
 export const AboutSection = () => {
-  const { content, isEditing, setActiveEditSection } = useContent();
-  const { title, subtitle, paragraphs, skills } = content.about;
+  const { content } = useContent();
+  const { title, subtitle, paragraphs, skills } = content?.about || { title: '', subtitle: '', paragraphs: [], skills: [] };
+
+  if (!paragraphs || paragraphs.length === 0 || !skills || skills.length === 0) {
+    return null;
+  }
 
   return (
     <section id="about" className="py-24 bg-zinc-900/30 relative group">
-      {isEditing && (
-        <div className="absolute top-6 right-6 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button onClick={() => setActiveEditSection('about')} variant="secondary" size="sm" className="shadow-lg">
-            <Edit2 className="w-4 h-4 mr-2" /> Edit About
-          </Button>
-        </div>
-      )}
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="mb-16">
           <p className="text-sm uppercase tracking-widest text-gray-400 mb-2">{subtitle}</p>
@@ -171,14 +158,27 @@ export const AboutSection = () => {
 
 export const ContactSection = () => {
   const { toast } = useToast();
-  const { content, isEditing, setActiveEditSection } = useContent();
+  const { content } = useContent();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { title, subtitle, description, email, phone, location } = content.contact;
+  const { title, subtitle, description, email, phone, location } = content?.contact || { title: '', subtitle: '', description: '', email: '', phone: '', location: '' };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  if (!email || !phone || !location) {
+    return null;
+  }
+
+  const handleInputChange = useCallback((field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }, []);
+
+  const handleSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
+    const form = e.currentTarget;
+    const nameInput = form.elements.namedItem('name') as HTMLInputElement | null;
+    const emailInput = form.elements.namedItem('email') as HTMLInputElement | null;
+    const messageInput = form.elements.namedItem('message') as HTMLTextAreaElement | null;
+    
+    if (!nameInput?.value || !emailInput?.value || !messageInput?.value) {
       toast({ title: 'Error', description: 'Please fill all fields.', variant: 'destructive' });
       return;
     }
@@ -188,17 +188,10 @@ export const ContactSection = () => {
       setFormData({ name: '', email: '', message: '' });
       setIsSubmitting(false);
     }, 1000);
-  };
+  }, [toast]);
 
   return (
     <section id="contact" className="py-24 relative group">
-      {isEditing && (
-        <div className="absolute top-6 right-6 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button onClick={() => setActiveEditSection('contact')} variant="secondary" size="sm" className="shadow-lg">
-            <Edit2 className="w-4 h-4 mr-2" /> Edit Contact
-          </Button>
-        </div>
-      )}
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="text-center mb-16">
           <p className="text-sm uppercase tracking-widest text-gray-400 mb-2">{subtitle}</p>
@@ -207,9 +200,9 @@ export const ContactSection = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2"><Label>Name</Label><Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="bg-zinc-900/50 border-white/10" /></div>
-            <div className="space-y-2"><Label>Email</Label><Input value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="bg-zinc-900/50 border-white/10" /></div>
-            <div className="space-y-2"><Label>Message</Label><Textarea value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="bg-zinc-900/50 border-white/10 min-h-[150px]" /></div>
+            <div className="space-y-2"><Label htmlFor="name">Name</Label><Input id="name" name="name" value={formData.name} onChange={e => handleInputChange('name', e.target.value)} className="bg-zinc-900/50 border-white/10" /></div>
+            <div className="space-y-2"><Label htmlFor="email">Email</Label><Input id="email" name="email" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} className="bg-zinc-900/50 border-white/10" /></div>
+            <div className="space-y-2"><Label htmlFor="message">Message</Label><Textarea id="message" name="message" value={formData.message} onChange={e => handleInputChange('message', e.target.value)} className="bg-zinc-900/50 border-white/10 min-h-[150px]" /></div>
             <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90">
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </Button>

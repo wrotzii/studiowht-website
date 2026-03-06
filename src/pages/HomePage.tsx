@@ -1,16 +1,21 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { Logo } from '@/components/Navigation';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { ChevronDown, Edit2 } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { PortfolioSection, AboutSection, ContactSection } from '@/components/Sections';
-import { Button } from '@/components/ui/button';
 import { useContent } from '@/context/ContentContext';
 
 const HomePage = () => {
-  const { content, isEditing, setActiveEditSection } = useContent();
+  const { content } = useContent();
+  const [videoError, setVideoError] = useState(false);
   
-  const scrollToSection = (sectionId: string) => {
+  // Validate content structure
+  if (!content?.hero || !content?.portfolio || !content?.about || !content?.contact) {
+    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Error loading page content</div>;
+  }
+  
+  const scrollToSection = useCallback((sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       const offset = 80;
@@ -18,7 +23,7 @@ const HomePage = () => {
       const offsetPosition = elementPosition + window.pageYOffset - offset;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
-  };
+  }, []);
 
   return (
     <div className="bg-black text-white selection:bg-white selection:text-black">
@@ -28,27 +33,26 @@ const HomePage = () => {
 
       {/* Hero Section */}
       <section id="hero" className="relative h-screen flex items-center justify-center overflow-hidden group">
-        {isEditing && (
-          <div className="absolute top-24 right-6 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button onClick={() => setActiveEditSection('hero')} variant="secondary" size="sm" className="shadow-lg">
-              <Edit2 className="w-4 h-4 mr-2" /> Edit Hero
-            </Button>
-          </div>
-        )}
         
         {/* Background Video with Overlay */}
         <div className="absolute inset-0 z-0">
-          <video
-            autoPlay
-            loop
-            muted
-            playsInline
-            preload="auto"
-            className="w-full h-full object-cover opacity-50"
-            poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80"
-          >
-            <source src={content.hero.videoUrl} type="video/mp4" />
-          </video>
+          {!videoError && (
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="metadata"
+              className="w-full h-full object-cover opacity-50"
+              poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80"
+              onError={() => setVideoError(true)}
+            >
+              <source src={content.hero.videoUrl} type="video/mp4" />
+            </video>
+          )}
+          {videoError && (
+            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black opacity-50" />
+          )}
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
         </div>
 
