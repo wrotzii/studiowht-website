@@ -11,6 +11,8 @@ const HomePage = lazy(() => import('./pages/HomePage'));
 const AdminLogin = lazy(() => import('./pages/AdminLogin'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const AdminEditor = lazy(() => import('./pages/AdminEditor'));
+const QRRedirectPage = lazy(() => import('./pages/QRRedirectPage'));
+const AdminQRRedirect = lazy(() => import('./pages/AdminQRRedirect'));
 
 function App() {
   return (
@@ -24,6 +26,9 @@ function App() {
               <Route path="/admin" element={<AdminLogin />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/editor" element={<AdminEditor />} />
+              <Route path="/admin/qr-manager" element={<AdminQRRedirect />} />
+              <Route path="/admin/qr-redirect" element={<AdminQRRedirect />} />
+              <Route path="/qr" element={<QRRedirectPage />} />
             </Routes>
           </Suspense>
           <Toaster />

@@ -28,10 +28,10 @@ const AdminDashboard = () => {
       color: 'bg-blue-500/10 border-blue-500/20 hover:border-blue-500/50'
     },
     {
-      title: 'Another Project',
-      description: 'Placeholder for future project management.',
+      title: 'QR Redirect Manager',
+      description: 'Control where your /qr link points to and manage presets.',
       icon: <FolderKanban className="w-8 h-8 text-white" />,
-      link: '/admin/project-2',
+      link: '/admin/qr-manager',
       color: 'bg-purple-500/10 border-purple-500/20 hover:border-purple-500/50'
     }
   ];

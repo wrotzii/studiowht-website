@@ -155,5 +155,18 @@
     "instagram": "#",
     "youtube": "#",
     "copyright": "STUDIOWHT"
+  },
+  "qrRedirect": {
+    "currentUrl": "https://example.com",
+    "presets": [
+      {
+        "name": "MAIN SITE",
+        "url": "whtstudio.com"
+      },
+      {
+        "name": "YOUTUBE",
+        "url": "https://www.youtube.com/@wrotzii"
+      }
+    ]
   }
 }
