@@ -1,16 +1,15 @@
 import React from 'react';
-import Logo from '@/components/Logo';
+import { Logo } from '@/components/Navigation';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { ChevronDown, Edit2 } from 'lucide-react';
-import PortfolioSection from '@/components/PortfolioSection';
-import AboutSection from '@/components/AboutSection';
-import ContactSection from '@/components/ContactSection';
+import { PortfolioSection, AboutSection, ContactSection } from '@/components/Sections';
 import { Button } from '@/components/ui/button';
 import { useContent } from '@/context/ContentContext';
 
 const HomePage = () => {
   const { content, isEditing, setActiveEditSection } = useContent();
+  
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
@@ -22,7 +21,7 @@ const HomePage = () => {
   };
 
   return (
-    <>
+    <div className="bg-black text-white selection:bg-white selection:text-black">
       <Helmet>
         <title>STUDIOWHT - {content.hero.subtitle}</title>
       </Helmet>
@@ -32,11 +31,12 @@ const HomePage = () => {
         {isEditing && (
           <div className="absolute top-24 right-6 z-50 opacity-0 group-hover:opacity-100 transition-opacity">
             <Button onClick={() => setActiveEditSection('hero')} variant="secondary" size="sm" className="shadow-lg">
-              <Edit2 className="w-4 h-4 mr-2" /> Edit Hero & Logo
+              <Edit2 className="w-4 h-4 mr-2" /> Edit Hero
             </Button>
           </div>
         )}
-        {/* Background Video/Image with Overlay */}
+        
+        {/* Background Video with Overlay */}
         <div className="absolute inset-0 z-0">
           <video
             autoPlay
@@ -44,51 +44,58 @@ const HomePage = () => {
             muted
             playsInline
             preload="auto"
-            className="w-full h-full object-cover opacity-40"
+            className="w-full h-full object-cover opacity-50"
+            poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80"
           >
             <source src={content.hero.videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
           </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/20 to-black" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
         </div>
 
         {/* Content */}
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto flex flex-col items-center">
+        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="mb-8"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, ease: "easeOut" }}
+            className="mb-12"
           >
             <Logo 
               style={{ 
-                width: content.hero.logoWidth ? (isNaN(Number(content.hero.logoWidth)) ? content.hero.logoWidth : `${content.hero.logoWidth}px`) : undefined,
-                height: content.hero.logoHeight ? (isNaN(Number(content.hero.logoHeight)) ? content.hero.logoHeight : `${content.hero.logoHeight}px`) : undefined,
-                objectFit: content.hero.logoFit as any,
-                objectPosition: content.hero.logoPosition
+                width: content.hero.logoWidth ? (isNaN(Number(content.hero.logoWidth)) ? content.hero.logoWidth : `${content.hero.logoWidth}px`) : '400px',
+                height: 'auto',
+                objectFit: 'contain'
               }}
-              className="max-w-full"
+              className="mx-auto"
             />
           </motion.div>
+          
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            className="text-lg md:text-xl text-white/60 tracking-[0.3em] uppercase font-light"
+          >
+            {content.hero.subtitle}
+          </motion.p>
         </div>
 
         {/* Scroll Indicator */}
         <motion.button
           onClick={() => scrollToSection('portfolio')}
-          className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/50 hover:text-white transition-all duration-300 flex flex-col items-center gap-2 z-10 hover:scale-110"
-          aria-label="Scroll to portfolio"
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 text-white/30 hover:text-white transition-all duration-500 flex flex-col items-center gap-4 z-10"
           animate={{ y: [0, 10, 0] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
-          <span className="text-xs uppercase tracking-widest font-medium">Scroll</span>
-          <ChevronDown className="w-5 h-5" />
+          <span className="text-[10px] uppercase tracking-[0.5em] font-medium">Explore</span>
+          <ChevronDown className="w-4 h-4" />
         </motion.button>
       </section>
 
       <PortfolioSection />
       <AboutSection />
       <ContactSection />
-    </>
+    </div>
   );
 };
 
