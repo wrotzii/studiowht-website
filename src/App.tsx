@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Route, Routes, BrowserRouter as Router } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import ScrollToTop from './components/ScrollToTop';
 import { Toaster } from '@/components/ui/toaster';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import HomePage from './pages/HomePage';
-import AdminLogin from './pages/AdminLogin';
-import AdminDashboard from './pages/AdminDashboard';
-import AdminEditor from './pages/AdminEditor';
 import { ContentProvider } from '@/context/ContentContext';
+
+const HomePage = lazy(() => import('./pages/HomePage'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const AdminEditor = lazy(() => import('./pages/AdminEditor'));
 
 function App() {
   return (
@@ -17,12 +18,14 @@ function App() {
       <ContentProvider>
         <Router>
           <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<><Header /><HomePage /><Footer /></>} />
-            <Route path="/admin" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route path="/admin/editor" element={<AdminEditor />} />
-          </Routes>
+          <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
+            <Routes>
+              <Route path="/" element={<><Header /><HomePage /><Footer /></>} />
+              <Route path="/admin" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
+              <Route path="/admin/editor" element={<AdminEditor />} />
+            </Routes>
+          </Suspense>
           <Toaster />
         </Router>
       </ContentProvider>

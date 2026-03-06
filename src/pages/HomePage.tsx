@@ -42,6 +42,7 @@ const HomePage = () => {
             loop
             muted
             playsInline
+            preload="auto"
             className="w-full h-full object-cover opacity-40"
           >
             <source src={content.hero.videoUrl} type="video/mp4" />
@@ -61,6 +62,8 @@ const HomePage = () => {
             <img 
               src="/white_no_box_cropped.png" 
               alt="STUDIOWHT Logo" 
+              loading="eager"
+              fetchPriority="high"
               style={{ 
                 width: content.hero.logoWidth ? (isNaN(Number(content.hero.logoWidth)) ? content.hero.logoWidth : `${content.hero.logoWidth}px`) : undefined,
                 height: content.hero.logoHeight ? (isNaN(Number(content.hero.logoHeight)) ? content.hero.logoHeight : `${content.hero.logoHeight}px`) : undefined,

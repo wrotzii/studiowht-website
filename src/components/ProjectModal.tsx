@@ -47,6 +47,8 @@ const ProjectModal = ({ isOpen, onClose, project }: any) => {
               <img 
                 src={project.image} 
                 alt={project.title} 
+                loading="lazy"
+                decoding="async"
                 style={{ 
                   objectFit: imageFit as any || 'cover',
                   objectPosition: imagePosition || 'center'

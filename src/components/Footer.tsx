@@ -29,6 +29,8 @@ export default function Footer() {
           <img
             src={data.logoUrl || "/media/white_no_box.png"}
             alt={data.copyright}
+            loading="lazy"
+            decoding="async"
             style={{ 
               width: data.logoWidth ? (isNaN(Number(data.logoWidth)) ? data.logoWidth : `${data.logoWidth}px`) : undefined,
               height: data.logoHeight ? (isNaN(Number(data.logoHeight)) ? data.logoHeight : `${data.logoHeight}px`) : undefined,

@@ -26,6 +26,8 @@ const ProjectCard = ({ image, title, category, description, onClick }: any) => {
         <img 
           src={image} 
           alt={title} 
+          loading="lazy"
+          decoding="async"
           style={{ 
             objectFit: imageFit as any || 'cover',
             objectPosition: imagePosition || 'center'
