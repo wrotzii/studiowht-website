@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import logo from '@/assets/logo.png';
 import { Mail, Phone, Instagram, Youtube, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContent } from "@/context/ContentContext";
@@ -27,7 +28,7 @@ export default function Footer() {
           className="flex flex-col items-center md:items-start"
         >
           <img
-            src={data.logoUrl || "/media/white_no_box.png"}
+            src={logo}
             alt={data.copyright}
             loading="lazy"
             decoding="async"

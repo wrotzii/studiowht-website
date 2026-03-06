@@ -1,8 +1,9 @@
 import React from 'react';
+import logo from '@/assets/logo.png';
 
 const Logo = ({ className = '' }: { className?: string }) => (
   <img 
-    src="/white_no_box_cropped.png" 
+    src={logo} 
     alt="STUDIOWHT Logo" 
     loading="eager"
     fetchPriority="high"

@@ -144,7 +144,7 @@
     ]
   },
   "footer": {
-    "logoUrl": "/white_no_box_cropped.png",
+    "logoUrl": "logo.png",
     "logoWidth": "130",
     "logoHeight": "auto",
     "logoFit": "contain",
