@@ -122,11 +122,14 @@ export const Footer = () => {
               { icon: Phone, href: `tel:${data.phone}` },
               data.instagram ? { icon: Instagram, href: data.instagram } : null,
               data.youtube ? { icon: Youtube, href: data.youtube } : null
-            ].filter(Boolean).map((social: any, i) => (
-              <a key={i} href={social?.href} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">
-                <social?.icon className="w-5 h-5" />
-              </a>
-            ))}
+            ].filter(Boolean).map((social: any, i) => {
+              const Icon = social?.icon;
+              return (
+                <a key={i} href={social?.href} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">
+                  {Icon && <Icon className="w-5 h-5" />}
+                </a>
+              );
+            })}
           </div>
           <p className="text-white/20 text-[10px] uppercase tracking-widest">
             &copy; {new Date().getFullYear()} {data.copyright || 'All rights reserved'}
