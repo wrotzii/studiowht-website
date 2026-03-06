@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import logo from '@/assets/logo.png';
+import Logo from '@/components/Logo';
 import { Mail, Phone, Instagram, Youtube, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useContent } from "@/context/ContentContext";
@@ -27,8 +27,7 @@ export default function Footer() {
           transition={{ duration: 0.6 }}
           className="flex flex-col items-center md:items-start"
         >
-          <img
-            src={logo}
+          <Logo
             alt={data.copyright}
             loading="lazy"
             decoding="async"

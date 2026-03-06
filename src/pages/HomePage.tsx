@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '@/assets/logo.png';
+import Logo from '@/components/Logo';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { ChevronDown, Edit2 } from 'lucide-react';
@@ -60,11 +60,7 @@ const HomePage = () => {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="mb-8"
           >
-            <img 
-              src={logo} 
-              alt="STUDIOWHT Logo" 
-              loading="eager"
-              fetchPriority="high"
+            <Logo 
               style={{ 
                 width: content.hero.logoWidth ? (isNaN(Number(content.hero.logoWidth)) ? content.hero.logoWidth : `${content.hero.logoWidth}px`) : undefined,
                 height: content.hero.logoHeight ? (isNaN(Number(content.hero.logoHeight)) ? content.hero.logoHeight : `${content.hero.logoHeight}px`) : undefined,
