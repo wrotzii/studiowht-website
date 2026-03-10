@@ -43,7 +43,7 @@
     "projects": [
       {
         "id": 1,
-        "image": "https://images.unsplash.com/photo-1691180279346-1120b70b2f01?auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1691180279346-1120b70b2f01?auto=format&fit=crop&q=80&w=800",
         "title": "Urban Stories",
         "category": "Commercial",
         "description": "A cinematic exploration of city life through dynamic camera movements and compelling narratives.",
@@ -56,7 +56,7 @@
       },
       {
         "id": 2,
-        "image": "https://images.unsplash.com/photo-1546488649-9cb5d3015d10?auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1546488649-9cb5d3015d10?auto=format&fit=crop&q=80&w=800",
         "title": "Rhythm & Light",
         "category": "Music Video",
         "description": "High-energy music video featuring innovative lighting techniques and creative visual storytelling.",
@@ -69,7 +69,7 @@
       },
       {
         "id": 3,
-        "image": "https://images.unsplash.com/photo-1532800365176-6a9186fc87d0?auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1532800365176-6a9186fc87d0?auto=format&fit=crop&q=80&w=800",
         "title": "Behind the Lens",
         "category": "Documentary",
         "description": "An intimate documentary capturing the creative process of filmmaking from a unique perspective.",
@@ -82,7 +82,7 @@
       },
       {
         "id": 4,
-        "image": "https://images.unsplash.com/photo-1579109652910-99b9be06aaec?auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1579109652910-99b9be06aaec?auto=format&fit=crop&q=80&w=800",
         "title": "Motion Portraits",
         "category": "Commercial",
         "description": "Elegant commercial work showcasing products through sophisticated camera operation and lighting.",
@@ -95,7 +95,7 @@
       },
       {
         "id": 5,
-        "image": "https://images.unsplash.com/photo-1675682897447-999b32747150?auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1675682897447-999b32747150?auto=format&fit=crop&q=80&w=800",
         "title": "Cinematic Dreams",
         "category": "Music Video",
         "description": "Atmospheric music video blending surreal visuals with precise technical execution.",
@@ -108,7 +108,7 @@
       },
       {
         "id": 6,
-        "image": "https://images.unsplash.com/photo-1546663250-e28569a9706d?auto=format&fit=crop&q=80",
+        "image": "https://images.unsplash.com/photo-1546663250-e28569a9706d?auto=format&fit=crop&q=80&w=800",
         "title": "Real Stories",
         "category": "Documentary",
         "description": "Authentic documentary storytelling with a focus on human connection and emotional depth.",

@@ -2,7 +2,7 @@
 import * as React from "react"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000
+const TOAST_REMOVE_DELAY = 1000000
 
 type ToasterToast = any;
 
@@ -71,7 +71,7 @@ function useToast() {
       const index = listeners.indexOf(setState)
       if (index > -1) { listeners.splice(index, 1) }
     };
-  }, [])
+  }, [state])
   return { ...state, toast, dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }) };
 }
 

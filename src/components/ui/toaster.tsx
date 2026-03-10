@@ -25,7 +25,7 @@ export function Toaster() {
           </Toast>
         );
       })}
-      <ToastViewport key="toast-viewport" />
+      <ToastViewport />
     </ToastProvider>
   );
 }

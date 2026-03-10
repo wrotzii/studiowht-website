@@ -17,10 +17,4 @@ export const ContentProvider = ({ children }: any) => {
   );
 };
 
-export const useContent = () => {
-  const context = useContext(ContentContext);
-  if (!context) {
-    throw new Error('useContent must be used within ContentProvider');
-  }
-  return context;
-};
+export const useContent = () => useContext(ContentContext);

@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React from 'react';
 import { Logo } from '@/components/Navigation';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
@@ -8,14 +8,8 @@ import { useContent } from '@/context/ContentContext';
 
 const HomePage = () => {
   const { content } = useContent();
-  const [videoError, setVideoError] = useState(false);
   
-  // Validate content structure
-  if (!content?.hero || !content?.portfolio || !content?.about || !content?.contact) {
-    return <div className="min-h-screen bg-black text-white flex items-center justify-center">Error loading page content</div>;
-  }
-  
-  const scrollToSection = useCallback((sectionId: string) => {
+  const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
       const offset = 80;
@@ -23,7 +17,7 @@ const HomePage = () => {
       const offsetPosition = elementPosition + window.pageYOffset - offset;
       window.scrollTo({ top: offsetPosition, behavior: 'smooth' });
     }
-  }, []);
+  };
 
   return (
     <div className="bg-black text-white selection:bg-white selection:text-black">
@@ -36,23 +30,17 @@ const HomePage = () => {
         
         {/* Background Video with Overlay */}
         <div className="absolute inset-0 z-0">
-          {!videoError && (
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              preload="metadata"
-              className="w-full h-full object-cover opacity-50"
-              poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80"
-              onError={() => setVideoError(true)}
-            >
-              <source src={content.hero.videoUrl} type="video/mp4" />
-            </video>
-          )}
-          {videoError && (
-            <div className="w-full h-full bg-gradient-to-br from-gray-900 to-black opacity-50" />
-          )}
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            className="w-full h-full object-cover opacity-50"
+            poster="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?auto=format&fit=crop&q=80"
+          >
+            <source src={content.hero.videoUrl} type="video/mp4" />
+          </video>
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
         </div>
 
