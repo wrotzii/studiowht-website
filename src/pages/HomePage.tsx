@@ -45,7 +45,7 @@ const HomePage = () => {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 text-center px-6 max-w-4xl mx-auto">
+        <div className="relative z-10 text-center px-6 w-full max-w-4xl mx-auto">
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -53,11 +53,7 @@ const HomePage = () => {
             className="mb-12"
           >
             <Logo 
-              style={{ 
-                width: content.hero.logoWidth ? (isNaN(Number(content.hero.logoWidth)) ? content.hero.logoWidth : `${content.hero.logoWidth}px`) : '400px',
-                height: 'auto',
-                objectFit: 'contain'
-              }}
+              width={content.hero.logoWidth || '400px'}
               className="mx-auto"
             />
           </motion.div>

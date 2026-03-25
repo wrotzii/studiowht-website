@@ -4,22 +4,36 @@ import { Menu, X, Mail, Phone, Instagram, Youtube } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
 // --- Shared Logo Component ---
-export const Logo = ({ className = '', style = {} }: any) => {
+export const Logo = ({ className = '', style = {}, width }: { className?: string, style?: React.CSSProperties, width?: string | number }) => {
   const [error, setError] = useState(false);
   const src = '/logo.png';
 
+  const formattedWidth = width ? (isNaN(Number(width)) ? width : `${width}px`) : undefined;
+
   return (
-    <div className={`flex items-center ${className}`} style={style}>
+    <div 
+      className={`flex items-center justify-center max-w-full ${className}`} 
+      style={{ 
+        ...style, 
+        maxWidth: '100%',
+        ...(formattedWidth ? { width: formattedWidth } : {})
+      }}
+    >
       {!error ? (
         <img 
           src={src} 
           alt="STUDIOWHT" 
-          className="max-h-full w-auto object-contain block"
+          className="max-w-full max-h-full object-contain block"
+          style={{
+            width: formattedWidth ? '100%' : 'auto',
+            height: formattedWidth ? 'auto' : '100%',
+            maxHeight: '100%'
+          }}
           onError={() => setError(true)}
           loading="eager"
         />
       ) : (
-        <span className="font-black tracking-tighter text-xl md:text-2xl uppercase whitespace-nowrap text-white">
+        <span className="font-black tracking-tighter text-xl md:text-2xl uppercase whitespace-nowrap text-white truncate">
           Studio<span className="text-neutral-500">WHT</span>
         </span>
       )}
@@ -54,10 +68,10 @@ export const Header = () => {
   ];
 
   return (
-    <header className={`fixed w-full z-50 transition-all duration-500 top-0 ${isScrolled ? 'bg-black/90 backdrop-blur-xl py-4 border-b border-white/5' : 'bg-transparent py-8'}`}>
-      <div className="container mx-auto px-6 flex justify-between items-center">
+    <header className={`fixed w-full z-50 transition-all duration-500 top-0 ${isScrolled ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 bg-black/20 backdrop-blur-lg pt-4'}`}>
+      <div className="container mx-auto px-6 pb-4 border-b border-white/10 flex justify-between items-center">
         <button onClick={() => scrollToSection('hero')} className="hover:opacity-80 transition-opacity">
-          <Logo className="h-8 md:h-10" />
+          <Logo className="h-8 md:h-10 max-w-[50vw] md:max-w-full" />
         </button>
 
         <nav className="hidden md:flex gap-10">
@@ -98,7 +112,7 @@ export const Footer = () => {
     <footer className="bg-black text-white py-20 px-6 border-t border-white/5 relative group">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col items-center md:items-start gap-6">
-          <Logo className="h-10" style={{ width: data.logoWidth ? `${data.logoWidth}px` : '150px' }} />
+          <Logo className="h-10" width={data.logoWidth || '150px'} />
           <p className="text-white/40 text-[10px] uppercase tracking-[0.4em]">{data.name}</p>
         </div>
 
