@@ -124,24 +124,8 @@
   "contact": {
     "title": "Let's Work Together",
     "subtitle": "Get in touch",
-    "description": "Available for freelance opportunities worldwide. Let's create something extraordinary.",
-    "email": "otozarins@gmail.com",
-    "phone": "+371 20404474",
-    "location": "Riga, Latvia",
-    "socials": [
-      {
-        "platform": "Instagram",
-        "url": "#"
-      },
-      {
-        "platform": "Vimeo",
-        "url": "#"
-      },
-      {
-        "platform": "LinkedIn",
-        "url": "#"
-      }
-    ]
+    "description": "Available for freelance opportunities. Let's create something extraordinary.",
+    "email": "otozarins@gmail.com"
   },
   "footer": {
     "logoUrl": "logo.png",
@@ -151,22 +135,8 @@
     "logoPosition": "center",
     "name": "Oto Teodors Zarins",
     "email": "otozarins@gmail.com",
-    "phone": "+371 20404474",
     "instagram": "#",
     "youtube": "#",
     "copyright": "STUDIOWHT"
-  },
-  "qrRedirect": {
-    "currentUrl": "https://example.com",
-    "presets": [
-      {
-        "name": "MAIN SITE",
-        "url": "whtstudio.com"
-      },
-      {
-        "name": "YOUTUBE",
-        "url": "https://www.youtube.com/@wrotzii"
-      }
-    ]
   }
 }

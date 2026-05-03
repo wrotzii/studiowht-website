@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Phone, MapPin, X, ExternalLink, Calendar, User, Briefcase, Wrench } from 'lucide-react';
+import { X, ExternalLink, Calendar, User, Briefcase, Wrench } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -153,15 +153,20 @@ export const ContactSection = () => {
   const { content } = useContent();
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { title, subtitle, description, email, phone, location } = content.contact;
+  const { title, subtitle, description, email } = content.contact;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email || !formData.message) {
-      toast({ title: 'Error', description: 'Please fill all fields.', variant: 'destructive' });
+    if (!formData.name.trim() || !formData.email.trim()) {
+      toast({ title: 'Error', description: 'Please provide both your name and email.', variant: 'destructive' });
+      return;
+    }
+    if (formData.message.trim().length < 50) {
+      toast({ title: 'Error', description: 'Please provide a message of at least 50 characters.', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
+    // Simulate an API call
     setTimeout(() => {
       toast({ title: 'Message Sent!', description: "I'll get back to you soon." });
       setFormData({ name: '', email: '', message: '' });
@@ -170,35 +175,63 @@ export const ContactSection = () => {
   };
 
   return (
-    <section id="contact" className="py-24 relative group">
-      <div className="container mx-auto px-6 max-w-5xl">
-        <div className="text-center mb-16">
-          <p className="text-sm uppercase tracking-widest text-gray-400 mb-2">{subtitle}</p>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">{title}</h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">{description}</p>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2"><Label>Name</Label><Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="bg-zinc-900/50 border-white/10" /></div>
-            <div className="space-y-2"><Label>Email</Label><Input value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="bg-zinc-900/50 border-white/10" /></div>
-            <div className="space-y-2"><Label>Message</Label><Textarea value={formData.message} onChange={e => setFormData({...formData, message: e.target.value})} className="bg-zinc-900/50 border-white/10 min-h-[150px]" /></div>
-            <Button type="submit" disabled={isSubmitting} className="w-full h-12 rounded-xl bg-white text-black hover:bg-white/90">
-              {isSubmitting ? 'Sending...' : 'Send Message'}
-            </Button>
-          </form>
-          <div className="space-y-8">
-            <div className="flex items-center gap-4 p-6 rounded-2xl bg-zinc-900/30 border border-white/5">
-              <Mail className="w-6 h-6 text-white/40" />
-              <div><p className="text-xs text-gray-400 uppercase tracking-widest">Email</p><p className="font-medium">{email}</p></div>
+    <section id="contact" className="py-32 relative group">
+      <div className="container mx-auto px-6 max-w-6xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
+          <div className="flex flex-col">
+            <p className="text-sm uppercase tracking-widest text-gray-500 mb-6">{subtitle}</p>
+            <h2 className="text-5xl md:text-6xl font-bold mb-8 tracking-tight">{title}</h2>
+            <p className="text-lg text-gray-400 mb-12 max-w-md leading-relaxed">{description}</p>
+            
+            <div className="pt-8 border-t border-white/10 mt-auto">
+              <span className="block text-xs uppercase tracking-widest text-gray-500 mb-3">Direct Email</span>
+              <a href={`mailto:${email}`} className="text-xl md:text-2xl font-medium text-white hover:text-white/70 transition-colors">
+                {email}
+              </a>
             </div>
-            <div className="flex items-center gap-4 p-6 rounded-2xl bg-zinc-900/30 border border-white/5">
-              <Phone className="w-6 h-6 text-white/40" />
-              <div><p className="text-xs text-gray-400 uppercase tracking-widest">Phone</p><p className="font-medium">{phone}</p></div>
-            </div>
-            <div className="flex items-center gap-4 p-6 rounded-2xl bg-zinc-900/30 border border-white/5">
-              <MapPin className="w-6 h-6 text-white/40" />
-              <div><p className="text-xs text-gray-400 uppercase tracking-widest">Location</p><p className="font-medium">{location}</p></div>
-            </div>
+          </div>
+
+          <div className="bg-zinc-900/30 p-8 md:p-10 rounded-3xl border border-white/5">
+            <form onSubmit={handleSubmit} className="space-y-8">
+              <div className="space-y-3">
+                <Label className="text-xs uppercase tracking-widest text-gray-500">Name *</Label>
+                <Input 
+                  value={formData.name} 
+                  required
+                  onChange={e => setFormData({...formData, name: e.target.value})} 
+                  className="bg-transparent border-t-0 border-x-0 border-b border-white/10 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-white text-lg transition-colors placeholder:text-neutral-700" 
+                  placeholder="Your Name"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-xs uppercase tracking-widest text-gray-500">Email *</Label>
+                <Input 
+                  value={formData.email} 
+                  type="email"
+                  required
+                  onChange={e => setFormData({...formData, email: e.target.value})} 
+                  className="bg-transparent border-t-0 border-x-0 border-b border-white/10 rounded-none px-0 h-12 focus-visible:ring-0 focus-visible:border-white text-lg transition-colors placeholder:text-neutral-700" 
+                  placeholder="hello@example.com"
+                />
+              </div>
+              <div className="space-y-3">
+                <Label className="text-xs uppercase tracking-widest text-gray-500">Message *</Label>
+                <Textarea 
+                  value={formData.message} 
+                  required
+                  minLength={50}
+                  onChange={e => setFormData({...formData, message: e.target.value})} 
+                  className="bg-transparent border-t-0 border-x-0 border-b border-white/10 rounded-none px-0 min-h-[120px] focus-visible:ring-0 focus-visible:border-white text-lg transition-colors resize-none placeholder:text-neutral-700" 
+                  placeholder="Tell me about your project... (min 50 characters)"
+                />
+                <div className="text-right text-xs text-neutral-500 mt-1">
+                  {formData.message.length} / 50 min characters
+                </div>
+              </div>
+              <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-2xl bg-white text-black hover:bg-neutral-200 text-sm tracking-widest uppercase font-semibold mt-4 transition-all">
+                {isSubmitting ? 'Sending...' : 'Send Message'}
+              </Button>
+            </form>
           </div>
         </div>
       </div>

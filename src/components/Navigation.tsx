@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Mail, Phone, Instagram, Youtube } from 'lucide-react';
+import { Menu, X, Mail, Instagram, Youtube } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
 // --- Shared Logo Component ---
@@ -120,7 +120,6 @@ export const Footer = () => {
           <div className="flex gap-8">
             {[
               { icon: Mail, href: `mailto:${data.email}` },
-              { icon: Phone, href: `tel:${data.phone}` },
               { icon: Instagram, href: data.instagram },
               { icon: Youtube, href: data.youtube }
             ].map((social, i) => (
