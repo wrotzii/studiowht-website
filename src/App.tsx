@@ -6,6 +6,7 @@ import { Header, Footer } from '@/components/Navigation';
 import { ContentProvider } from '@/context/ContentContext';
 
 const HomePage = lazy(() => import('./pages/HomePage'));
+const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 const ScrollToTop = () => {
   const { pathname } = useLocation();
@@ -24,6 +25,7 @@ function App() {
           <Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><div className="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div></div>}>
             <Routes>
               <Route path="/" element={<><Header /><HomePage /><Footer /></>} />
+              <Route path="/whtadmin/*" element={<AdminPage />} />
             </Routes>
           </Suspense>
           <Toaster />
