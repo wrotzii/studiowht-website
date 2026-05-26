@@ -4,11 +4,20 @@ import { Menu, X, Mail, Instagram, Youtube } from 'lucide-react';
 import { useContent } from '@/context/ContentContext';
 
 // --- Shared Logo Component ---
-export const Logo = ({ className = '', style = {}, width }: { className?: string, style?: React.CSSProperties, width?: string | number }) => {
+export const Logo = ({ className = '', style = {}, width, logoOverride }: { className?: string, style?: React.CSSProperties, width?: string | number, logoOverride?: string }) => {
   const [error, setError] = useState(false);
-  const src = '/logo.png';
+  const { settings, content } = useContent();
+  
+  // Use settings or default to /logo.png, but allow override (for mobile)
+  // If settings object exists and is loaded, and logoUrl is strictly an empty string, it means they cleared it.
+  const isLogoCleared = settings && typeof settings.logoUrl === 'string' && settings.logoUrl.trim() === '';
+  const defaultSrc = isLogoCleared ? '' : (settings?.logoUrl ? settings.logoUrl : '/logo.png');
+  const src = logoOverride || defaultSrc;
 
   const formattedWidth = width ? (isNaN(Number(width)) ? width : `${width}px`) : undefined;
+
+  // Render text logo if error or if explicitly no logo image set
+  const showTextLogo = error || !src;
 
   return (
     <div 
@@ -19,7 +28,7 @@ export const Logo = ({ className = '', style = {}, width }: { className?: string
         ...(formattedWidth ? { width: formattedWidth } : {})
       }}
     >
-      {!error ? (
+      {!showTextLogo ? (
         <img 
           src={src} 
           alt="STUDIOWHT" 
@@ -33,8 +42,8 @@ export const Logo = ({ className = '', style = {}, width }: { className?: string
           loading="eager"
         />
       ) : (
-        <span className="font-black tracking-tighter text-xl md:text-2xl uppercase whitespace-nowrap text-white truncate">
-          Studio<span className="text-neutral-500">WHT</span>
+        <span className="font-black tracking-tighter text-xl md:text-2xl uppercase whitespace-nowrap text-foreground truncate">
+          {settings?.siteName ? settings.siteName : <>Studio<span className="text-muted-foreground">WHT</span></>}
         </span>
       )}
     </div>
@@ -45,6 +54,7 @@ export const Logo = ({ className = '', style = {}, width }: { className?: string
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { settings } = useContent();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -67,31 +77,59 @@ export const Header = () => {
     { label: 'Contact', id: 'contact' }
   ];
 
+  const stickyEnabled = settings?.stickyHeader ?? true;
+  const hideHeader = isScrolled && !stickyEnabled;
+  const paddingY = settings?.navbarPadding || '1rem';
+  const position = settings?.navbarPosition || 'left';
+  const logoDesktop = settings?.logoWidth || undefined;
+  const logoMobile = settings?.logoMobileWidth || undefined;
+  
+  const containerClasses = `container mx-auto px-6 border-b border-border flex items-center ${
+    position === 'center' ? 'flex-col md:flex-row justify-between' : 
+    position === 'right' ? 'flex-row-reverse justify-between' : 
+    'justify-between'
+  }`;
+
+  const navClasses = `hidden md:flex gap-10 ${
+    position === 'center' ? 'mx-auto' :
+    position === 'right' ? 'mr-auto ml-0' :
+    ''
+  }`;
+
   return (
-    <header className={`fixed w-full z-50 transition-all duration-500 top-0 ${isScrolled ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 bg-black/20 backdrop-blur-lg pt-4'}`}>
-      <div className="container mx-auto px-6 pb-4 border-b border-white/10 flex justify-between items-center">
-        <button onClick={() => scrollToSection('hero')} className="hover:opacity-80 transition-opacity">
-          <Logo className="h-8 md:h-10 max-w-[50vw] md:max-w-full" />
+    <header className={`fixed w-full z-50 transition-all duration-500 top-0 ${hideHeader ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 bg-background/50 backdrop-blur-lg pt-4'}`} style={{ paddingTop: paddingY }}>
+      <div className={containerClasses} style={{ paddingBottom: paddingY }}>
+        <button onClick={() => scrollToSection('hero')} className={`hover:opacity-80 transition-opacity ${position === 'center' ? 'md:absolute md:left-6' : ''}`}>
+          {/* Mobile Logo */}
+          <div className="md:hidden">
+             <Logo logoOverride={settings?.logoMobileUrl || undefined} width={logoMobile || 'auto'} className="h-8 max-w-[50vw]" />
+          </div>
+          {/* Desktop Logo */}
+          <div className="hidden md:block">
+             <Logo width={logoDesktop || 'auto'} className="h-10 max-w-full" />
+          </div>
         </button>
 
-        <nav className="hidden md:flex gap-10">
+        <nav className={navClasses}>
           {navItems.map((item) => (
-            <button key={item.id} onClick={() => scrollToSection(item.id)} className="text-white/60 hover:text-white text-[11px] uppercase tracking-[0.3em] font-medium transition-colors">
+            <button key={item.id} onClick={() => scrollToSection(item.id)} className="text-foreground/60 hover:text-foreground text-[11px] uppercase tracking-[0.3em] font-medium transition-colors">
               {item.label}
             </button>
           ))}
         </nav>
 
-        <button className="md:hidden text-white p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+        <button className="md:hidden text-foreground p-2" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
           {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
+        
+        {position === 'center' && <div className="hidden md:block w-32" />}
       </div>
 
       <AnimatePresence>
         {isMobileMenuOpen && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="md:hidden absolute top-full left-0 w-full bg-black/95 backdrop-blur-2xl border-b border-white/10 py-8 px-6 flex flex-col gap-6">
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="md:hidden absolute top-full left-0 w-full bg-background/95 backdrop-blur-2xl border-b border-border py-8 px-6 flex flex-col gap-6">
             {navItems.map((item) => (
-              <button key={item.id} onClick={() => scrollToSection(item.id)} className="text-left text-white/60 hover:text-white text-sm uppercase tracking-widest font-medium">
+              <button key={item.id} onClick={() => scrollToSection(item.id)} className="text-left text-foreground/60 hover:text-foreground text-sm uppercase tracking-widest font-medium">
                 {item.label}
               </button>
             ))}
@@ -109,11 +147,11 @@ export const Footer = () => {
   if (!data) return null;
 
   return (
-    <footer className="bg-black text-white py-20 px-6 border-t border-white/5 relative group">
+    <footer className="bg-background text-foreground py-20 px-6 border-t border-border relative group">
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
         <div className="flex flex-col items-center md:items-start gap-6">
           <Logo className="h-10" width={data.logoWidth || '150px'} />
-          <p className="text-white/40 text-[10px] uppercase tracking-[0.4em]">{data.name}</p>
+          <p className="text-foreground/40 text-[10px] uppercase tracking-[0.4em]">{data.name}</p>
         </div>
 
         <div className="flex flex-col items-center md:items-end gap-8">
@@ -123,12 +161,12 @@ export const Footer = () => {
               { icon: Instagram, href: data.instagram },
               { icon: Youtube, href: data.youtube }
             ].map((social, i) => (
-              <a key={i} href={social.href} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">
+              <a key={i} href={social.href} target="_blank" rel="noopener noreferrer" className="text-foreground/40 hover:text-foreground transition-colors">
                 <social.icon className="w-5 h-5" />
               </a>
             ))}
           </div>
-          <p className="text-white/20 text-[10px] uppercase tracking-widest">
+          <p className="text-foreground/20 text-[10px] uppercase tracking-widest">
             &copy; {new Date().getFullYear()} {data.copyright}
           </p>
         </div>

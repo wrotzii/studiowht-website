@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, QrCode, LogOut, Star, Plus, Trash2, Edit2, CheckCircle2 } from 'lucide-react';
+import { Lock, QrCode, LogOut, Star, Plus, Trash2, Edit2, CheckCircle2, MessageSquare } from 'lucide-react';
 
 const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const [password, setPassword] = useState('');
@@ -321,6 +321,144 @@ const QREditor = () => {
   );
 };
 
+import { NavLink } from 'react-router-dom';
+import { LayoutTemplate, MonitorSmartphone, Image as ImageIcon, FileText, Activity, Settings as SettingsIcon, BarChart2 } from 'lucide-react';
+import SiteEditor from './SiteEditor';
+import { MediaLibrary } from './MediaLibrary';
+
+import { PagesManager } from './PagesManager';
+import { SettingsAdmin } from './SettingsAdmin';
+import { AnalyticsAdmin } from './AnalyticsAdmin';
+
+const MessagesViewer = () => {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchMessages = () => {
+    fetch('/api/admin/messages')
+      .then(res => res.json())
+      .then(data => setMessages(Array.isArray(data) ? data : []))
+      .catch(() => setMessages([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
+  const markAsRead = async (id: number) => {
+    await fetch(`/api/admin/messages/${id}/read`, { method: 'POST' });
+    fetchMessages();
+  };
+
+  const deleteMessage = async (id: number) => {
+    if(confirm('Are you sure you want to delete this message?')) {
+      await fetch(`/api/admin/messages/${id}`, { method: 'DELETE' });
+      fetchMessages();
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="border-b border-white/10 pb-6 mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">Inbox</h1>
+        <p className="text-zinc-400">Manage contact form messages.</p>
+      </div>
+      <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
+        {loading ? <div className="p-8 text-center text-zinc-500">Loading...</div> : (
+          <div className="divide-y divide-white/10">
+               {messages.map((msg: any) => (
+                 <div key={msg.id} className={`p-6 transition-colors ${msg.is_read ? 'bg-transparent text-zinc-400' : 'bg-emerald-950/20'}`}>
+                   <div className="flex justify-between items-start mb-4">
+                     <div>
+                       <div className="flex items-center gap-2">
+                         {!msg.is_read && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
+                         <h3 className="font-semibold text-lg text-white">{msg.name}</h3>
+                       </div>
+                       <a href={`mailto:${msg.email}`} className="text-sm text-emerald-400 hover:underline">{msg.email}</a>
+                     </div>
+                     <span className="text-xs text-zinc-500">{new Date(msg.created_at).toLocaleString()}</span>
+                   </div>
+                   <p className="text-zinc-300 whitespace-pre-wrap bg-black/50 p-4 rounded-xl border border-white/5">{msg.message}</p>
+                   <div className="mt-4 flex gap-4">
+                      {!msg.is_read && (
+                        <Button size="sm" variant="outline" className="text-xs border-white/10" onClick={() => markAsRead(msg.id)}>
+                          <CheckCircle2 className="w-3 h-3 mr-2" /> Mark as Read
+                        </Button>
+                      )}
+                      <Button size="sm" variant="destructive" className="text-xs bg-red-500/10 text-red-500 hover:bg-red-500/20" onClick={() => deleteMessage(msg.id)}>
+                        <Trash2 className="w-3 h-3 mr-2" /> Delete
+                      </Button>
+                   </div>
+                 </div>
+               ))}
+               {messages.length === 0 && (
+                 <div className="p-8 text-center text-zinc-500">No messages yet.</div>
+               )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const LogsViewer = () => {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/logs')
+      .then(res => res.json())
+      .then(data => setLogs(Array.isArray(data) ? data : []))
+      .catch(() => setLogs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8">
+      <div className="border-b border-white/10 pb-6 mb-6">
+        <h1 className="text-3xl font-bold text-white mb-2">Activity Logs</h1>
+        <p className="text-zinc-400">Security event audit trail.</p>
+      </div>
+      <div className="bg-black/40 border border-white/10 rounded-2xl overflow-hidden">
+        {loading ? <div className="p-8 text-center text-zinc-500">Loading...</div> : (
+          <table className="w-full text-left text-sm text-zinc-300">
+            <thead className="text-xs uppercase bg-white/5 text-zinc-500 border-b border-white/10">
+              <tr>
+                 <th className="px-6 py-4 font-medium">Timestamp</th>
+                 <th className="px-6 py-4 font-medium">Action</th>
+                 <th className="px-6 py-4 font-medium">User</th>
+                 <th className="px-6 py-4 font-medium">IP</th>
+                 <th className="px-6 py-4 font-medium">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+               {logs.map((log: any) => (
+                 <tr key={log.id} className="border-b border-white/5 hover:bg-white/5">
+                   <td className="px-6 py-4 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
+                   <td className="px-6 py-4">
+                     <span className={`px-2 py-1 rounded text-xs font-medium ${log.action.includes('fail') ? 'bg-red-500/10 text-red-400' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                       {log.action}
+                     </span>
+                   </td>
+                   <td className="px-6 py-4 capitalize">{log.user}</td>
+                   <td className="px-6 py-4 font-mono text-xs">{log.ip_address}</td>
+                   <td className="px-6 py-4">{log.details}</td>
+                 </tr>
+               ))}
+               {logs.length === 0 && (
+                 <tr>
+                   <td colSpan={5} className="px-6 py-8 text-center text-zinc-500">No activity recorded yet.</td>
+                 </tr>
+               )}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AdminLayout = () => {
   const navigate = useNavigate();
 
@@ -331,20 +469,90 @@ const AdminLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white font-sans">
-      <header className="border-b border-white/10 bg-zinc-900/50 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
-        <div className="flex items-center gap-4">
-          <div className="font-bold tracking-widest text-lg">WHT ADMIN</div>
+    <div className="min-h-screen bg-black text-white font-sans flex flex-col md:flex-row">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 bg-zinc-900/30 flex flex-col sticky top-0 md:h-screen z-50">
+        <div className="p-6 border-b border-white/10 flex items-center justify-between md:justify-start">
+          <div className="font-bold tracking-widest text-lg flex items-center gap-2">
+            <MonitorSmartphone className="w-5 h-5 text-emerald-500" />
+            WHT ADMIN
+          </div>
+          <Button onClick={handleLogout} variant="ghost" size="icon" className="md:hidden text-zinc-400 hover:text-white">
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
-        <Button onClick={handleLogout} variant="ghost" className="text-zinc-400 hover:text-white flex items-center gap-2">
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline">Logout</span>
-        </Button>
-      </header>
-      <main className="p-6 md:p-12">
+        <nav className="p-4 space-y-1 flex-grow flex flex-col overflow-y-auto">
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-2 px-4 mt-2">Content</div>
+          <NavLink 
+            to="/whtadmin/pages" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <FileText className="w-5 h-5" />
+            Pages
+          </NavLink>
+          <NavLink 
+            to="/whtadmin/media" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <ImageIcon className="w-5 h-5" />
+            Media Library
+          </NavLink>
+
+          <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-2 px-4 mt-6">System Tools</div>
+          <NavLink 
+            to="/whtadmin/analytics" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <BarChart2 className="w-5 h-5" />
+            Analytics
+          </NavLink>
+          <NavLink 
+            to="/whtadmin/qr-editor" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <QrCode className="w-5 h-5" />
+            QR Redirects
+          </NavLink>
+          <NavLink 
+            to="/whtadmin/messages" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <MessageSquare className="w-5 h-5" />
+            Messages
+          </NavLink>
+          <NavLink 
+            to="/whtadmin/logs" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <Activity className="w-5 h-5" />
+            Activity Logs
+          </NavLink>
+          <NavLink 
+            to="/whtadmin/site-settings" 
+            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+          >
+            <SettingsIcon className="w-5 h-5" />
+            Settings
+          </NavLink>
+        </nav>
+        <div className="p-4 border-t border-white/10 hidden md:block">
+          <Button onClick={handleLogout} variant="ghost" className="w-full justify-start text-zinc-400 hover:text-white flex items-center gap-2">
+            <LogOut className="w-4 h-4" />
+            Logout
+          </Button>
+        </div>
+      </aside>
+      
+      <main className="flex-1 p-6 md:p-12 md:max-h-screen md:overflow-y-auto">
         <Routes>
-          <Route path="/" element={<Navigate to="qr-editor" replace />} />
+          <Route path="/" element={<Navigate to="pages" replace />} />
+          <Route path="pages" element={<PagesManager />} />
           <Route path="qr-editor" element={<QREditor />} />
+          <Route path="media" element={<MediaLibrary />} />
+          <Route path="messages" element={<MessagesViewer />} />
+          <Route path="logs" element={<LogsViewer />} />
+          <Route path="analytics" element={<AnalyticsAdmin />} />
+          <Route path="site-settings" element={<SettingsAdmin />} />
+          <Route path="settings" element={<Navigate to="site-settings" replace />} />
         </Routes>
       </main>
     </div>
@@ -372,5 +580,11 @@ export default function AdminPage() {
     return <AdminLogin onLogin={() => setIsAuthenticated(true)} />;
   }
 
-  return <AdminLayout />;
+  return (
+    <Routes>
+      <Route path="site-editor/:id" element={<SiteEditor />} />
+      <Route path="site-editor" element={<Navigate to="/whtadmin/pages" replace />} />
+      <Route path="*" element={<AdminLayout />} />
+    </Routes>
+  );
 }

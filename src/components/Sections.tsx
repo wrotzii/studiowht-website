@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useContent } from '@/context/ContentContext';
+import { MediaEmbed } from '@/components/ui/MediaEmbed';
 
 // --- Portfolio Section Components ---
 
@@ -16,14 +17,11 @@ const ProjectCard = ({ image, title, category, description, onClick }: any) => (
     onClick={onClick}
     className="group relative aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-900 cursor-pointer"
   >
-    <img 
-      src={image} 
-      alt={title} 
-      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
-      loading="eager"
-    />
-    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500" />
-    <div className="absolute bottom-0 left-0 right-0 p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+    <div className="absolute inset-0 pointer-events-none">
+      <MediaEmbed url={image} alt={title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" autoPlay loop muted />
+    </div>
+    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-500 pointer-events-none" />
+    <div className="absolute bottom-0 left-0 right-0 p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 pointer-events-none">
       <p className="text-sm uppercase tracking-widest text-white/60 mb-2">{category}</p>
       <h3 className="text-2xl font-bold text-white mb-2">{title}</h3>
       <p className="text-white/40 text-sm line-clamp-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">{description}</p>
@@ -49,7 +47,7 @@ const ProjectModal = ({ isOpen, onClose, project }: any) => {
             <button onClick={onClose} className="absolute top-6 right-6 z-10 p-2 bg-black/50 hover:bg-white/10 rounded-full text-white transition-colors"><X className="w-6 h-6" /></button>
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="relative aspect-[4/5] lg:aspect-auto h-full min-h-[400px]">
-                <img src={project.image} alt={project.title} className="absolute inset-0 w-full h-full object-cover" />
+                <MediaEmbed url={project.image} alt={project.title} className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted />
               </div>
               <div className="p-8 md:p-12 lg:p-16 flex flex-col justify-center">
                 <div className="mb-8">
@@ -105,7 +103,7 @@ export const PortfolioSection = () => {
           <p className="text-gray-400 max-w-2xl text-lg">{description}</p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {projects.map((project: any, index: number) => (
+          {(projects || []).map((project: any, index: number) => (
             <div key={project.id} className="relative group/card">
               <ProjectCard {...project} onClick={() => setSelectedProject(project)} />
             </div>
@@ -124,20 +122,20 @@ export const AboutSection = () => {
   const { title, subtitle, paragraphs, skills } = content.about;
 
   return (
-    <section id="about" className="py-24 bg-zinc-900/30 relative group">
+    <section id="about" className="py-24 bg-secondary/20 relative group">
       <div className="container mx-auto px-6 max-w-5xl">
         <div className="mb-16">
-          <p className="text-sm uppercase tracking-widest text-gray-400 mb-2">{subtitle}</p>
+          <p className="text-sm uppercase tracking-widest text-muted-foreground mb-2">{subtitle}</p>
           <h2 className="text-4xl md:text-5xl font-bold mb-8">{title}</h2>
-          <div className="text-lg text-gray-300 space-y-6 max-w-3xl">
-            {paragraphs.map((p: string, i: number) => <p key={i}>{p}</p>)}
+          <div className="text-lg text-foreground/80 space-y-6 max-w-3xl">
+            {(paragraphs || []).map((p: string, i: number) => <p key={i}>{p}</p>)}
           </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {skills.map((skill: any, i: number) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="p-6 rounded-2xl bg-black/40 border border-white/5 transition-all duration-300 hover:bg-white/5 hover:-translate-y-1">
+          {(skills || []).map((skill: any, i: number) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }} className="p-6 rounded-2xl bg-card border border-border/30 transition-all duration-300 hover:bg-secondary hover:-translate-y-1">
               <h3 className="text-xl font-semibold mb-3">{skill.title}</h3>
-              <p className="text-gray-400">{skill.description}</p>
+              <p className="text-muted-foreground">{skill.description}</p>
             </motion.div>
           ))}
         </div>
@@ -155,23 +153,30 @@ export const ContactSection = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { title, subtitle, description, email } = content.contact;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name.trim() || !formData.email.trim()) {
-      toast({ title: 'Error', description: 'Please provide both your name and email.', variant: 'destructive' });
-      return;
-    }
-    if (formData.message.trim().length < 50) {
-      toast({ title: 'Error', description: 'Please provide a message of at least 50 characters.', variant: 'destructive' });
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      toast({ title: 'Error', description: 'Please fill in all fields.', variant: 'destructive' });
       return;
     }
     setIsSubmitting(true);
-    // Simulate an API call
-    setTimeout(() => {
-      toast({ title: 'Message Sent!', description: "I'll get back to you soon." });
-      setFormData({ name: '', email: '', message: '' });
-      setIsSubmitting(false);
-    }, 1000);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        toast({ title: 'Message Sent!', description: "I'll get back to you soon." });
+        setFormData({ name: '', email: '', message: '' });
+      } else {
+        const data = await res.json();
+        toast({ title: 'Error', description: data.error || 'Failed to send message.', variant: 'destructive' });
+      }
+    } catch (err) {
+      toast({ title: 'Error', description: 'Network error. Please try again later.', variant: 'destructive' });
+    }
+    setIsSubmitting(false);
   };
 
   return (
@@ -219,14 +224,10 @@ export const ContactSection = () => {
                 <Textarea 
                   value={formData.message} 
                   required
-                  minLength={50}
                   onChange={e => setFormData({...formData, message: e.target.value})} 
                   className="bg-transparent border-t-0 border-x-0 border-b border-white/10 rounded-none px-0 min-h-[120px] focus-visible:ring-0 focus-visible:border-white text-lg transition-colors resize-none placeholder:text-neutral-700" 
-                  placeholder="Tell me about your project... (min 50 characters)"
+                  placeholder="Tell me about your project"
                 />
-                <div className="text-right text-xs text-neutral-500 mt-1">
-                  {formData.message.length} / 50 min characters
-                </div>
               </div>
               <Button type="submit" disabled={isSubmitting} className="w-full h-14 rounded-2xl bg-white text-black hover:bg-neutral-200 text-sm tracking-widest uppercase font-semibold mt-4 transition-all">
                 {isSubmitting ? 'Sending...' : 'Send Message'}
