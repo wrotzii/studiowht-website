@@ -84,6 +84,8 @@ db.exec(`
     referrer TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
   );
+  CREATE INDEX IF NOT EXISTS idx_page_views_time ON page_views(timestamp);
+  CREATE INDEX IF NOT EXISTS idx_qr_scans_time ON qr_scans(timestamp);
 `);
 
 try { db.prepare("ALTER TABLE contact_messages ADD COLUMN is_read INTEGER DEFAULT 0").run(); } catch(e) {}
@@ -694,7 +696,8 @@ app.delete("/api/admin/media/:id", authenticateAdmin, (req, res) => {
   const { id } = req.params;
   const item = db.prepare("SELECT * FROM media WHERE id = ?").get(id) as any;
   if (item && item.url.startsWith("/uploads/")) {
-    const filePath = path.join(process.cwd(), item.url);
+    const fileName = path.basename(item.url);
+    const filePath = path.join(uploadsDir, fileName);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
