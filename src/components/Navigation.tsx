@@ -14,6 +14,11 @@ export const Logo = ({ className = '', style = {}, width, logoOverride }: { clas
   const defaultSrc = isLogoCleared ? '' : (settings?.logoUrl ? settings.logoUrl : '/logo.png');
   const src = logoOverride || defaultSrc;
 
+  // Reset error state if the image source changes
+  useEffect(() => {
+    setError(false);
+  }, [src]);
+
   const formattedWidth = width ? (isNaN(Number(width)) ? width : `${width}px`) : undefined;
 
   // Render text logo if error or if explicitly no logo image set
@@ -78,7 +83,10 @@ export const Header = () => {
   ];
 
   const stickyEnabled = settings?.stickyHeader ?? true;
-  const hideHeader = isScrolled && !stickyEnabled;
+  // Hide on desktop if sticky is disabled. Hide on mobile always when scrolled down unless menu is open
+  const hideHeaderDesktop = isScrolled && !stickyEnabled;
+  const hideHeaderMobile = isScrolled && !isMobileMenuOpen;
+  
   const paddingY = settings?.navbarPadding || '1rem';
   const position = settings?.navbarPosition || 'left';
   const logoDesktop = settings?.logoWidth || undefined;
@@ -96,8 +104,16 @@ export const Header = () => {
     ''
   }`;
 
+  const desktopClasses = hideHeaderDesktop 
+    ? 'md:-translate-y-full md:opacity-0 md:pointer-events-none' 
+    : 'md:translate-y-0 md:opacity-100 md:bg-background/50 md:backdrop-blur-lg md:pointer-events-auto';
+    
+  const mobileClasses = hideHeaderMobile 
+    ? '-translate-y-full opacity-0 pointer-events-none' 
+    : 'translate-y-0 opacity-100 bg-background/50 backdrop-blur-lg pointer-events-auto';
+
   return (
-    <header className={`fixed w-full z-50 transition-all duration-500 top-0 ${hideHeader ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100 bg-background/50 backdrop-blur-lg pt-4'}`} style={{ paddingTop: paddingY }}>
+    <header className={`fixed w-full z-50 transition-all duration-500 top-0 ${desktopClasses} ${mobileClasses} ${!isScrolled ? 'pt-4' : ''}`} style={{ paddingTop: paddingY }}>
       <div className={containerClasses} style={{ paddingBottom: paddingY }}>
         <button onClick={() => scrollToSection('hero')} className={`hover:opacity-80 transition-opacity ${position === 'center' ? 'md:absolute md:left-6' : ''}`}>
           {/* Mobile Logo */}

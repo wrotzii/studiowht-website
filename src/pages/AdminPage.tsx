@@ -97,8 +97,11 @@ const QREditor = () => {
   }, []);
 
   const handleUpdateActiveUrl = async (urlToSave: string) => {
-    if (!urlToSave.startsWith('http')) {
-      toast({ title: 'Invalid URL', description: 'URL must start with http or https', variant: 'destructive' });
+    try {
+      const parsed = new URL(urlToSave);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+    } catch(err) {
+      toast({ title: 'Invalid URL', description: 'URL must be a valid http or https link', variant: 'destructive' });
       return;
     }
     setSavingUrl(true);
@@ -120,8 +123,15 @@ const QREditor = () => {
 
   const handleAddFav = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!favLabel || !favUrl.startsWith('http')) {
-      toast({ title: 'Error', description: 'Valid label and HTTP URL required.', variant: 'destructive' });
+    if (!favLabel) {
+      toast({ title: 'Error', description: 'Label is required.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const parsed = new URL(favUrl);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+    } catch(err) {
+      toast({ title: 'Error', description: 'Valid HTTP/HTTPS URL required.', variant: 'destructive' });
       return;
     }
     try {
@@ -150,8 +160,15 @@ const QREditor = () => {
   };
 
   const handleEditFav = async (id: number) => {
-    if (!editFavLabel || !editFavUrl.startsWith('http')) {
-      toast({ title: 'Error', description: 'Valid label and HTTP URL required.', variant: 'destructive' });
+    if (!editFavLabel) {
+      toast({ title: 'Error', description: 'Label is required.', variant: 'destructive' });
+      return;
+    }
+    try {
+      const parsed = new URL(editFavUrl);
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error();
+    } catch(err) {
+      toast({ title: 'Error', description: 'Valid HTTP/HTTPS URL required.', variant: 'destructive' });
       return;
     }
     try {
@@ -322,7 +339,7 @@ const QREditor = () => {
 };
 
 import { NavLink } from 'react-router-dom';
-import { LayoutTemplate, MonitorSmartphone, Image as ImageIcon, FileText, Activity, Settings as SettingsIcon, BarChart2 } from 'lucide-react';
+import { LayoutTemplate, MonitorSmartphone, Image as ImageIcon, FileText, Activity, Settings as SettingsIcon, BarChart2, Menu, X } from 'lucide-react';
 import SiteEditor from './SiteEditor';
 import { MediaLibrary } from './MediaLibrary';
 
@@ -461,6 +478,7 @@ const LogsViewer = () => {
 
 const AdminLayout = () => {
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
@@ -468,22 +486,30 @@ const AdminLayout = () => {
     window.location.reload();
   };
 
+  const closeMenu = () => setIsMobileMenuOpen(false);
+
   return (
     <div className="min-h-screen bg-black text-white font-sans flex flex-col md:flex-row">
-      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 bg-zinc-900/30 flex flex-col sticky top-0 md:h-screen z-50">
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 bg-zinc-950 md:bg-zinc-900/30 flex flex-col sticky top-0 max-h-screen md:h-screen z-50">
         <div className="p-6 border-b border-white/10 flex items-center justify-between md:justify-start">
           <div className="font-bold tracking-widest text-lg flex items-center gap-2">
             <MonitorSmartphone className="w-5 h-5 text-emerald-500" />
             WHT ADMIN
           </div>
-          <Button onClick={handleLogout} variant="ghost" size="icon" className="md:hidden text-zinc-400 hover:text-white">
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <div className="md:hidden flex items-center gap-2">
+            <Button onClick={handleLogout} variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
+              <LogOut className="w-4 h-4" />
+            </Button>
+            <Button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} variant="ghost" size="icon" className="text-zinc-400 hover:text-white">
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </Button>
+          </div>
         </div>
-        <nav className="p-4 space-y-1 flex-grow flex flex-col overflow-y-auto">
+        <nav className={`p-4 space-y-1 flex-grow flex-col overflow-y-auto ${isMobileMenuOpen ? 'flex' : 'hidden md:flex'}`}>
           <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-2 px-4 mt-2">Content</div>
           <NavLink 
             to="/whtadmin/pages" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <FileText className="w-5 h-5" />
@@ -491,6 +517,7 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink 
             to="/whtadmin/media" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <ImageIcon className="w-5 h-5" />
@@ -500,6 +527,7 @@ const AdminLayout = () => {
           <div className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold mb-2 px-4 mt-6">System Tools</div>
           <NavLink 
             to="/whtadmin/analytics" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <BarChart2 className="w-5 h-5" />
@@ -507,6 +535,7 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink 
             to="/whtadmin/qr-editor" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <QrCode className="w-5 h-5" />
@@ -514,6 +543,7 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink 
             to="/whtadmin/messages" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <MessageSquare className="w-5 h-5" />
@@ -521,6 +551,7 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink 
             to="/whtadmin/logs" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <Activity className="w-5 h-5" />
@@ -528,6 +559,7 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink 
             to="/whtadmin/site-settings" 
+            onClick={closeMenu}
             className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
             <SettingsIcon className="w-5 h-5" />

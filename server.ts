@@ -185,6 +185,16 @@ app.post("/api/admin/logout", (req, res) => {
 // Simple memory store for basic rate limiting
 const contactRateLimits = new Map<string, number>();
 
+// Clean up expired rate limits every hour to prevent memory leaks
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamp] of contactRateLimits.entries()) {
+    if (now - timestamp > 5 * 60 * 1000) {
+      contactRateLimits.delete(ip);
+    }
+  }
+}, 60 * 60 * 1000);
+
 // API: Submit Contact Form
 app.post("/api/contact", (req, res) => {
   const { name, email, message } = req.body;
@@ -580,8 +590,11 @@ app.get("/api/admin/qr", authenticateAdmin, (req, res) => {
 // API: Update Active URL
 app.post("/api/admin/qr/active", authenticateAdmin, (req, res) => {
   const { url } = req.body;
-  if (!url || !url.startsWith("http")) {
-    res.status(400).json({ error: "Invalid URL. Must start with http or https." });
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
+  } catch (err) {
+    res.status(400).json({ error: "Invalid URL. Must be a valid http or https URL." });
     return;
   }
   setActiveUrl(url);
@@ -591,8 +604,15 @@ app.post("/api/admin/qr/active", authenticateAdmin, (req, res) => {
 // API: Add Favorite
 app.post("/api/admin/qr/favorites", authenticateAdmin, (req, res) => {
   const { label, url } = req.body;
-  if (!label || !url || !url.startsWith("http")) {
-    res.status(400).json({ error: "Invalid label or URL." });
+  if (!label) {
+    res.status(400).json({ error: "Invalid label." });
+    return;
+  }
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
+  } catch (err) {
+    res.status(400).json({ error: "Invalid URL. Must be a valid http or https URL." });
     return;
   }
   const info = db.prepare("INSERT INTO favorites (label, url) VALUES (?, ?)").run(label, url);
@@ -603,8 +623,15 @@ app.post("/api/admin/qr/favorites", authenticateAdmin, (req, res) => {
 app.put("/api/admin/qr/favorites/:id", authenticateAdmin, (req, res) => {
   const { id } = req.params;
   const { label, url } = req.body;
-  if (!label || !url || !url.startsWith("http")) {
-    res.status(400).json({ error: "Invalid label or URL." });
+  if (!label) {
+    res.status(400).json({ error: "Invalid label." });
+    return;
+  }
+  try {
+    const parsed = new URL(url);
+    if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Invalid protocol');
+  } catch (err) {
+    res.status(400).json({ error: "Invalid URL. Must be a valid http or https URL." });
     return;
   }
   db.prepare("UPDATE favorites SET label = ?, url = ? WHERE id = ?").run(label, url, id);
