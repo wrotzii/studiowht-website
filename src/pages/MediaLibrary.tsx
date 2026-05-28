@@ -18,6 +18,27 @@ export interface MediaItem {
   size: number;
 }
 
+const VideoPreview = ({ src, thumbnail }: { src: string, thumbnail: string }) => {
+  return (
+    <div className="relative w-full h-full flex flex-col justify-center items-center text-zinc-500 overflow-hidden">
+      {thumbnail !== src ? <img src={thumbnail} className="absolute inset-0 w-full h-full object-cover opacity-50 transition-opacity duration-300 group-hover:opacity-0" /> : null}
+      
+      <video 
+        src={src} 
+        className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-300" 
+        muted 
+        loop 
+        playsInline 
+      />
+
+      <div className="relative z-10 flex flex-col items-center group-hover:opacity-0 transition-opacity duration-300">
+        <Video className="w-10 h-10 mb-2" />
+        <span className="text-xs font-semibold uppercase">Video</span>
+      </div>
+    </div>
+  );
+};
+
 export const MediaLibrary = () => {
   const [media, setMedia] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,15 +153,27 @@ export const MediaLibrary = () => {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {filteredMedia.map(item => (
-                <div key={item.id} className="group relative bg-black/60 border border-white/10 rounded-xl overflow-hidden aspect-square flex items-center justify-center">
+                <div 
+                  key={item.id} 
+                  className="group relative bg-black/60 border border-white/10 rounded-xl overflow-hidden aspect-square flex items-center justify-center"
+                  onMouseEnter={(e) => {
+                    const video = e.currentTarget.querySelector('video');
+                    if (video) {
+                      video.play().catch(() => {});
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const video = e.currentTarget.querySelector('video');
+                    if (video) {
+                      video.pause();
+                      video.currentTime = 0;
+                    }
+                  }}
+                >
                   {item.type === 'image' ? (
                     <img src={item.thumbnail} alt={item.title} className="w-full h-full object-cover" />
                   ) : item.type === 'video' ? (
-                    <div className="relative w-full h-full flex flex-col justify-center items-center text-zinc-500">
-                      {item.thumbnail !== item.url ? <img src={item.thumbnail} className="absolute inset-0 w-full h-full object-cover opacity-50" /> : null}
-                      <Video className="w-10 h-10 mb-2 relative z-10" />
-                      <span className="text-xs font-semibold uppercase relative z-10">Video</span>
-                    </div>
+                    <VideoPreview src={item.url} thumbnail={item.thumbnail} />
                   ) : (
                     <div className="w-full h-full flex flex-col justify-center items-center text-zinc-500">
                       <FileText className="w-10 h-10 mb-2" />

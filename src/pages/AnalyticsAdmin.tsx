@@ -8,11 +8,13 @@ export const AnalyticsAdmin = () => {
   const [qrData, setQrData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<'30' | '60' | '90' | '365' | 'all'>('30');
-  const [activeTab, setActiveTab] = useState<'web' | 'qr'>('web');
+  const [activeTab, setActiveTab] = useState<'web' | 'qr' | 'access_log'>('web');
+  const [locationViewType, setLocationViewType] = useState<'country' | 'city'>('country');
 
   useEffect(() => {
     setLoading(true);
-    const fetchPath = activeTab === 'web' ? `/api/admin/analytics` : `/api/admin/analytics/qr`;
+    // Even if access_log is active, we fetch web analytics to get recentAccesses.
+    const fetchPath = (activeTab === 'qr') ? `/api/admin/analytics/qr` : `/api/admin/analytics`;
     
     fetch(`${fetchPath}?timeframe=${timeframe}`)
       .then(res => res.json())
@@ -23,10 +25,10 @@ export const AnalyticsAdmin = () => {
           formattedDate: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
         })) || [];
         
-        if (activeTab === 'web') {
-           setData({ ...d, trend: formattedTrend });
-        } else {
+        if (activeTab === 'qr') {
            setQrData({ ...d, trend: formattedTrend });
+        } else {
+           setData({ ...d, trend: formattedTrend });
         }
       })
       .finally(() => setLoading(false));
@@ -95,6 +97,12 @@ export const AnalyticsAdmin = () => {
              onClick={() => setActiveTab('qr')}
            >
              <Smartphone className="w-4 h-4 inline-block mr-2" /> QR Code Scans
+           </button>
+           <button
+             className={`pb-4 text-sm font-medium transition-colors border-b-2 ${activeTab === 'access_log' ? 'border-emerald-500 text-emerald-400' : 'border-transparent text-zinc-400 hover:text-white'}`}
+             onClick={() => setActiveTab('access_log')}
+           >
+             <Clock className="w-4 h-4 inline-block mr-2" /> Access Log
            </button>
          </div>
          {activeTab === 'qr' && (
@@ -166,14 +174,30 @@ export const AnalyticsAdmin = () => {
               </div>
             </div>
 
-            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
-              <h3 className="text-lg font-semibold mb-6">Top Locations</h3>
-              <div className="h-[300px] w-full">
-                {data?.locations?.length > 0 ? (
+            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">Top Locations</h3>
+                <div className="flex bg-black/40 rounded-lg p-1">
+                   <button 
+                     onClick={() => setLocationViewType('country')}
+                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${locationViewType === 'country' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'}`}
+                   >
+                     Country
+                   </button>
+                   <button 
+                     onClick={() => setLocationViewType('city')}
+                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${locationViewType === 'city' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'}`}
+                   >
+                     City
+                   </button>
+                </div>
+              </div>
+              <div className="flex-1 h-[300px] w-full">
+                {(locationViewType === 'country' ? data?.locationsByCountry : data?.locationsByCity)?.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.locations} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
+                    <BarChart data={locationViewType === 'country' ? data.locationsByCountry : data.locationsByCity} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
                       <XAxis type="number" hide />
-                      <YAxis dataKey="country" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                      <YAxis dataKey="name" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
                       <Tooltip 
                         cursor={{fill: 'rgba(255,255,255,0.05)'}}
                         contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
@@ -190,7 +214,7 @@ export const AnalyticsAdmin = () => {
           </div>
 
         </div>
-      ) : (
+      ) : activeTab === 'qr' ? (
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
@@ -263,14 +287,30 @@ export const AnalyticsAdmin = () => {
               </div>
             </div>
 
-            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
-              <h3 className="text-lg font-semibold mb-6">Top Locations</h3>
-              <div className="h-[300px] w-full">
-                {qrData?.locations?.length > 0 ? (
+            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6 flex flex-col">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold">Top Locations</h3>
+                <div className="flex bg-black/40 rounded-lg p-1">
+                   <button 
+                     onClick={() => setLocationViewType('country')}
+                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${locationViewType === 'country' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'}`}
+                   >
+                     Country
+                   </button>
+                   <button 
+                     onClick={() => setLocationViewType('city')}
+                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${locationViewType === 'city' ? 'bg-white/10 text-white' : 'text-zinc-400 hover:text-white'}`}
+                   >
+                     City
+                   </button>
+                </div>
+              </div>
+              <div className="flex-1 h-[300px] w-full">
+                {(locationViewType === 'country' ? qrData?.locationsByCountry : qrData?.locationsByCity)?.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={qrData.locations} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
+                    <BarChart data={locationViewType === 'country' ? qrData.locationsByCountry : qrData.locationsByCity} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
                       <XAxis type="number" hide />
-                      <YAxis dataKey="country" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                      <YAxis dataKey="name" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
                       <Tooltip 
                         cursor={{fill: 'rgba(255,255,255,0.05)'}}
                         contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
@@ -311,6 +351,46 @@ export const AnalyticsAdmin = () => {
                 </div>
               ) : (
                 <div className="flex items-center justify-center text-zinc-500 h-[200px]">No recent scans found.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6 overflow-hidden flex flex-col min-h-[600px]">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-500" />
+              Access Log
+            </h3>
+            <div className="flex-1 overflow-auto -mx-6 px-6">
+              {data?.recentAccesses?.length > 0 ? (
+                <table className="w-full text-sm text-left">
+                  <thead className="text-xs text-zinc-400 uppercase bg-black/40">
+                    <tr>
+                      <th className="px-4 py-3 rounded-l-lg font-medium">Time (Local)</th>
+                      <th className="px-4 py-3 font-medium">Page Accessed</th>
+                      <th className="px-4 py-3 font-medium">Location</th>
+                      <th className="px-4 py-3 rounded-r-lg font-medium">IP Address</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.recentAccesses.map((access: any, i: number) => (
+                      <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                         <td className="px-4 py-3 text-zinc-500 whitespace-nowrap">{new Date(access.timestamp).toLocaleString()}</td>
+                         <td className="px-4 py-3 text-emerald-400 font-medium">
+                           <div className="flex items-center gap-2">
+                             <Globe className="w-4 h-4 text-zinc-500" />
+                             {access.path}
+                           </div>
+                         </td>
+                         <td className="px-4 py-3 text-white">{access.location}</td>
+                         <td className="px-4 py-3 text-zinc-500 font-mono text-xs">{access.ip_address}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="flex items-center justify-center text-zinc-500 h-[200px]">No recent accesses found.</div>
               )}
             </div>
           </div>

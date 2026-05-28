@@ -334,27 +334,66 @@ app.get("/api/admin/analytics", authenticateAdmin, (req, res) => {
       GROUP BY ip_address
     `).all() as { ip_address: string, count: number }[];
 
-    const locationsMap: Record<string, number> = {};
+    const countryMap: Record<string, number> = {};
+    const cityMap: Record<string, number> = {};
     for (const ip of ipCounts) {
       let country = 'Unknown';
+      let city = 'Unknown';
       if (ip.ip_address) {
         if (ip.ip_address === '::1' || ip.ip_address === '127.0.0.1') {
           country = 'Localhost';
+          city = 'Localhost';
         } else {
           const geo = geoip.lookup(ip.ip_address);
-          if (geo && geo.country) {
-            country = geo.country;
+          if (geo) {
+            if (geo.country) country = geo.country;
+            if (geo.city) city = geo.city;
+            if (geo.city && geo.country) city = `${geo.city}, ${geo.country}`;
           }
         }
       }
-      locationsMap[country] = (locationsMap[country] || 0) + ip.count;
+      countryMap[country] = (countryMap[country] || 0) + ip.count;
+      cityMap[city] = (cityMap[city] || 0) + ip.count;
     }
-    const locations = Object.entries(locationsMap)
-      .map(([country, count]) => ({ country, count }))
+    const locationsByCountry = Object.entries(countryMap)
+      .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
+      
+    const locationsByCity = Object.entries(cityMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+      
+    const recentAccessesRaw = db.prepare(`
+      SELECT timestamp, ip_address, path
+      FROM page_views
+      WHERE ${condition}
+      ORDER BY timestamp DESC
+      LIMIT 100
+    `).all() as { timestamp: string, ip_address: string, path: string }[];
+    
+    const recentAccesses = recentAccessesRaw.map(access => {
+      let location = 'Unknown';
+      if (access.ip_address === '::1' || access.ip_address === '127.0.0.1') {
+        location = 'Localhost';
+      } else if (access.ip_address) {
+        const geo = geoip.lookup(access.ip_address);
+        if (geo) {
+           const city = geo.city || '';
+           const country = geo.country || '';
+           if (city && country) location = `${city}, ${country}`;
+           else if (country) location = country;
+           else if (city) location = city;
+        }
+      }
+      return {
+         ...access,
+         location
+      };
+    });
 
-    res.json({ trend, topPages, locations, totalViews: (totalViews as any)?.count || 0 });
+    res.json({ trend, topPages, locationsByCountry, locationsByCity, recentAccesses, totalViews: (totalViews as any)?.count || 0 });
   } catch (err) {
     res.status(500).json({ error: "Failed to load analytics" });
   }
@@ -895,27 +934,38 @@ app.get("/api/admin/analytics/qr", authenticateAdmin, (req, res) => {
       GROUP BY ip_address
     `).all() as { ip_address: string, count: number }[];
 
-    const locationsMap: Record<string, number> = {};
+    const countryMap: Record<string, number> = {};
+    const cityMap: Record<string, number> = {};
     for (const ip of ipCounts) {
       let country = 'Unknown';
+      let city = 'Unknown';
       if (ip.ip_address) {
         if (ip.ip_address === '::1' || ip.ip_address === '127.0.0.1') {
           country = 'Localhost';
+          city = 'Localhost';
         } else {
           const geo = geoip.lookup(ip.ip_address);
-          if (geo && geo.country) {
-            country = geo.country;
+          if (geo) {
+            if (geo.country) country = geo.country;
+            if (geo.city) city = geo.city;
+            if (geo.city && geo.country) city = `${geo.city}, ${geo.country}`;
           }
         }
       }
-      locationsMap[country] = (locationsMap[country] || 0) + ip.count;
+      countryMap[country] = (countryMap[country] || 0) + ip.count;
+      cityMap[city] = (cityMap[city] || 0) + ip.count;
     }
-    const locations = Object.entries(locationsMap)
-      .map(([country, count]) => ({ country, count }))
+    const locationsByCountry = Object.entries(countryMap)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+      
+    const locationsByCity = Object.entries(cityMap)
+      .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
 
-    res.json({ trend, topDestinations, recentScans, locations, totalScans: (totalScans as any)?.count || 0 });
+    res.json({ trend, topDestinations, recentScans, locationsByCountry, locationsByCity, totalScans: (totalScans as any)?.count || 0 });
   } catch (err) {
     res.status(500).json({ error: "Failed to load QR analytics" });
   }
