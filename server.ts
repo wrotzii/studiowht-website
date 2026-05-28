@@ -136,7 +136,7 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB
+    fileSize: 500 * 1024 * 1024 // 500MB
   }
 });
 
@@ -156,7 +156,8 @@ const app = express();
 const PORT = 3000;
 app.set('trust proxy', true);
 
-app.use(express.json());
+app.use(express.json({ limit: '500mb' }));
+app.use(express.urlencoded({ limit: '500mb', extended: true }));
 app.use(cookieParser());
 
 // Activity Log Helper

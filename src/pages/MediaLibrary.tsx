@@ -316,6 +316,8 @@ const AddMediaModal = ({ isOpen, onClose, onAdded }: { isOpen: boolean, onClose:
         } catch (err) {
           toast({ title: 'Error', description: 'Failed to parse response', variant: 'destructive' });
         }
+      } else if (xhr.status === 413) {
+        toast({ title: 'Error', description: 'File too large. Over infrastructure limits (413). Try uploading a file smaller than 30MB.', variant: 'destructive' });
       } else {
         let errMsg = 'Upload failed';
         try {
