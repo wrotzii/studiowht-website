@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
+import { Routes, Route, useNavigate, Navigate, NavLink } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Lock, QrCode, LogOut, Star, Plus, Trash2, Edit2, CheckCircle2, MessageSquare } from 'lucide-react';
+import { Lock, QrCode, LogOut, Star, Plus, Trash2, Edit2, CheckCircle2, MessageSquare, LayoutTemplate, MonitorSmartphone, Image as ImageIcon, FileText, Activity, Settings as SettingsIcon, BarChart2, Menu, X } from 'lucide-react';
+
+import SiteEditor from './SiteEditor';
+import { MediaLibrary } from './MediaLibrary';
+import { PagesManager } from './PagesManager';
+import { SettingsAdmin } from './SettingsAdmin';
+import { AnalyticsAdmin } from './AnalyticsAdmin';
 
 const AdminLogin = ({ onLogin }: { onLogin: () => void }) => {
   const [password, setPassword] = useState('');
@@ -338,15 +344,6 @@ const QREditor = () => {
   );
 };
 
-import { NavLink } from 'react-router-dom';
-import { LayoutTemplate, MonitorSmartphone, Image as ImageIcon, FileText, Activity, Settings as SettingsIcon, BarChart2, Menu, X } from 'lucide-react';
-import SiteEditor from './SiteEditor';
-import { MediaLibrary } from './MediaLibrary';
-
-import { PagesManager } from './PagesManager';
-import { SettingsAdmin } from './SettingsAdmin';
-import { AnalyticsAdmin } from './AnalyticsAdmin';
-
 const MessagesViewer = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -354,7 +351,10 @@ const MessagesViewer = () => {
   const fetchMessages = () => {
     fetch('/api/admin/messages')
       .then(res => res.json())
-      .then(data => setMessages(Array.isArray(data) ? data : []))
+      .then(data => {
+        setMessages(Array.isArray(data) ? data : []);
+        window.dispatchEvent(new Event('messages-updated'));
+      })
       .catch(() => setMessages([]))
       .finally(() => setLoading(false));
   };
@@ -479,6 +479,28 @@ const LogsViewer = () => {
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await fetch('/api/admin/messages/unread-count');
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadMessagesCount(data.count);
+        }
+      } catch (err) {}
+    };
+
+    fetchUnreadCount();
+    const intervalId = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
+    
+    window.addEventListener('messages-updated', fetchUnreadCount);
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener('messages-updated', fetchUnreadCount);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await fetch('/api/admin/logout', { method: 'POST' });
@@ -544,10 +566,17 @@ const AdminLayout = () => {
           <NavLink 
             to="/whtadmin/messages" 
             onClick={closeMenu}
-            className={({isActive}) => `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
+            className={({isActive}) => `flex items-center justify-between px-4 py-3 rounded-xl transition-colors whitespace-nowrap ${isActive ? 'bg-white/10 text-white' : 'text-zinc-400 hover:bg-white/5 hover:text-white'}`}
           >
-            <MessageSquare className="w-5 h-5" />
-            Messages
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-5 h-5" />
+              Messages
+            </div>
+            {unreadMessagesCount > 0 && (
+              <span className="bg-emerald-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                {unreadMessagesCount}
+              </span>
+            )}
           </NavLink>
           <NavLink 
             to="/whtadmin/logs" 

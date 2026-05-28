@@ -4,6 +4,7 @@ import { createServer as createViteServer } from "vite";
 import Database from "better-sqlite3";
 import cookieParser from "cookie-parser";
 import jwt from "jsonwebtoken";
+import geoip from "geoip-lite";
 
 const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-for-dev";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
@@ -239,6 +240,16 @@ app.post("/api/admin/messages/:id/read", authenticateAdmin, (req, res) => {
   }
 });
 
+// API: Admin get unread messages count
+app.get("/api/admin/messages/unread-count", authenticateAdmin, (req, res) => {
+  try {
+    const unreadCount = db.prepare("SELECT count(*) as count FROM contact_messages WHERE is_read = 0").get() as { count: number };
+    res.json({ count: unreadCount.count });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to get unread count" });
+  }
+});
+
 // API: Admin delete message
 app.delete("/api/admin/messages/:id", authenticateAdmin, (req, res) => {
   try {
@@ -297,7 +308,34 @@ app.get("/api/admin/analytics", authenticateAdmin, (req, res) => {
 
     const totalViews = db.prepare(`SELECT count(*) as count FROM page_views WHERE ${condition}`).get();
 
-    res.json({ trend, topPages, totalViews: (totalViews as any)?.count || 0 });
+    const ipCounts = db.prepare(`
+      SELECT ip_address, count(*) as count
+      FROM page_views
+      WHERE ${condition}
+      GROUP BY ip_address
+    `).all() as { ip_address: string, count: number }[];
+
+    const locationsMap: Record<string, number> = {};
+    for (const ip of ipCounts) {
+      let country = 'Unknown';
+      if (ip.ip_address) {
+        if (ip.ip_address === '::1' || ip.ip_address === '127.0.0.1') {
+          country = 'Localhost';
+        } else {
+          const geo = geoip.lookup(ip.ip_address);
+          if (geo && geo.country) {
+            country = geo.country;
+          }
+        }
+      }
+      locationsMap[country] = (locationsMap[country] || 0) + ip.count;
+    }
+    const locations = Object.entries(locationsMap)
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.json({ trend, topPages, locations, totalViews: (totalViews as any)?.count || 0 });
   } catch (err) {
     res.status(500).json({ error: "Failed to load analytics" });
   }
@@ -386,7 +424,7 @@ app.post("/api/admin/pages", authenticateAdmin, (req, res) => {
   const { title, slug } = req.body;
   if (!title || !slug) return res.status(400).json({ error: "Title and slug are required" });
   
-  const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
   try {
     db.prepare("INSERT INTO pages (id, title, slug) VALUES (?, ?, ?)").run(id, title, slug);
     const newPage = db.prepare("SELECT * FROM pages WHERE id = ?").get(id);
@@ -485,7 +523,7 @@ app.post("/api/admin/pages/:id/publish", authenticateAdmin, (req, res) => {
   }
   
   // Create Revision
-  const revId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const revId = Date.now().toString(36) + Math.random().toString(36).substring(2);
   db.prepare("INSERT INTO revisions (id, content, name) VALUES (?, ?, ?)").run(revId, contentStr, (name || 'Published Version') + ` (${pageInfo?.title || req.params.id})`);
   
   const ip = req.ip || req.connection.remoteAddress || 'unknown';
@@ -509,7 +547,7 @@ app.post("/api/admin/pages/:id/duplicate", authenticateAdmin, (req, res) => {
   const row = db.prepare("SELECT * FROM pages WHERE id = ?").get(req.params.id) as any;
   if (!row) return res.status(404).json({ error: "Page not found" });
   
-  const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
   const slug = row.slug + '-copy';
   const title = row.title + ' (Copy)';
   
@@ -662,7 +700,7 @@ app.post("/api/admin/media/upload", authenticateAdmin, upload.single("file"), (r
     res.status(400).json({ error: "No file uploaded." });
     return;
   }
-  const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
   const type = req.file.mimetype.startsWith("image/") ? "image" 
              : req.file.mimetype.startsWith("video/") ? "video" 
              : "document";
@@ -680,7 +718,7 @@ app.post("/api/admin/media/upload", authenticateAdmin, upload.single("file"), (r
 // API: Add Embed Media
 app.post("/api/admin/media/embed", authenticateAdmin, (req, res) => {
   const { type, url, thumbnail, title, folder, tags } = req.body;
-  const id = Date.now().toString(36) + Math.random().toString(36).substr(2);
+  const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
   
   db.prepare(`
     INSERT INTO media (id, type, url, thumbnail, title, folder, tags) 
@@ -773,7 +811,34 @@ app.get("/api/admin/analytics/qr", authenticateAdmin, (req, res) => {
 
     const totalScans = db.prepare(`SELECT count(*) as count FROM qr_scans WHERE ${condition}`).get();
 
-    res.json({ trend, topDestinations, recentScans, totalScans: (totalScans as any)?.count || 0 });
+    const ipCounts = db.prepare(`
+      SELECT ip_address, count(*) as count
+      FROM qr_scans
+      WHERE ${condition}
+      GROUP BY ip_address
+    `).all() as { ip_address: string, count: number }[];
+
+    const locationsMap: Record<string, number> = {};
+    for (const ip of ipCounts) {
+      let country = 'Unknown';
+      if (ip.ip_address) {
+        if (ip.ip_address === '::1' || ip.ip_address === '127.0.0.1') {
+          country = 'Localhost';
+        } else {
+          const geo = geoip.lookup(ip.ip_address);
+          if (geo && geo.country) {
+            country = geo.country;
+          }
+        }
+      }
+      locationsMap[country] = (locationsMap[country] || 0) + ip.count;
+    }
+    const locations = Object.entries(locationsMap)
+      .map(([country, count]) => ({ country, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    res.json({ trend, topDestinations, recentScans, locations, totalScans: (totalScans as any)?.count || 0 });
   } catch (err) {
     res.status(500).json({ error: "Failed to load QR analytics" });
   }

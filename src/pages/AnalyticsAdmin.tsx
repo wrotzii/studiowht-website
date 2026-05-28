@@ -143,25 +143,49 @@ export const AnalyticsAdmin = () => {
             </div>
           </div>
 
-          <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
-            <h3 className="text-lg font-semibold mb-6">Top Pages</h3>
-            <div className="h-[300px] w-full">
-              {data?.topPages?.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.topPages} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="path" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
-                    <Tooltip 
-                      cursor={{fill: 'rgba(255,255,255,0.05)'}}
-                      contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                      itemStyle={{ color: '#10b981' }}
-                    />
-                    <Bar dataKey="views" name="Views" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-zinc-500">No data available.</div>
-              )}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-6">Top Pages</h3>
+              <div className="h-[300px] w-full">
+                {data?.topPages?.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.topPages} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="path" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                      <Tooltip 
+                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                        itemStyle={{ color: '#10b981' }}
+                      />
+                      <Bar dataKey="views" name="Views" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-zinc-500">No data available.</div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-6">Top Locations</h3>
+              <div className="h-[300px] w-full">
+                {data?.locations?.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.locations} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="country" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                      <Tooltip 
+                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                        itemStyle={{ color: '#10b981' }}
+                      />
+                      <Bar dataKey="count" name="Views" fill="#0ea5e9" radius={[0, 4, 4, 0]} barSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-zinc-500">No location data available.</div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -239,33 +263,55 @@ export const AnalyticsAdmin = () => {
               </div>
             </div>
 
-            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6 overflow-hidden flex flex-col">
-              <h3 className="text-lg font-semibold mb-6">Recent Scans</h3>
-              <div className="flex-1 overflow-auto -mx-6 px-6">
-                {qrData?.recentScans?.length > 0 ? (
-                  <div className="space-y-4">
-                    {qrData.recentScans.slice(0, 50).map((scan: any, i: number) => (
-                      <div key={i} className="flex gap-4 p-3 rounded-xl hover:bg-white/5 border border-white/5 bg-black/20 transition-colors">
-                         <div className="bg-blue-500/10 p-2 rounded-lg shrink-0 h-fit">
-                            <Smartphone className="w-4 h-4 text-blue-400" />
-                         </div>
-                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2 mb-1">
-                               <span className="text-white text-sm truncate font-medium">{scan.url}</span>
-                               <span className="text-xs text-zinc-500 whitespace-nowrap">{new Date(scan.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
-                            </div>
-                            <div className="flex gap-4 text-xs text-zinc-500 truncate">
-                               <span className="truncate max-w-[150px]" title={scan.user_agent}>UA: {scan.user_agent.substring(0, 30)}...</span>
-                               {scan.referrer && scan.referrer !== 'direct' && <span>Ref: {scan.referrer}</span>}
-                            </div>
-                         </div>
-                      </div>
-                    ))}
-                  </div>
+            <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6">
+              <h3 className="text-lg font-semibold mb-6">Top Locations</h3>
+              <div className="h-[300px] w-full">
+                {qrData?.locations?.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={qrData.locations} layout="vertical" margin={{ top: 0, right: 10, left: 20, bottom: 0 }}>
+                      <XAxis type="number" hide />
+                      <YAxis dataKey="country" type="category" stroke="#a1a1aa" fontSize={12} tickLine={false} axisLine={false} width={100} />
+                      <Tooltip 
+                        cursor={{fill: 'rgba(255,255,255,0.05)'}}
+                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                        itemStyle={{ color: '#3b82f6' }}
+                      />
+                      <Bar dataKey="count" name="Scans" fill="#3b82f6" radius={[0, 4, 4, 0]} barSize={24} />
+                    </BarChart>
+                  </ResponsiveContainer>
                 ) : (
-                  <div className="flex items-center justify-center text-zinc-500 h-[200px]">No recent scans found.</div>
+                  <div className="h-full flex items-center justify-center text-zinc-500">No location data available.</div>
                 )}
               </div>
+            </div>
+          </div>
+          
+          <div className="bg-zinc-900/30 border border-white/10 rounded-2xl p-6 overflow-hidden flex flex-col">
+            <h3 className="text-lg font-semibold mb-6">Recent Scans</h3>
+            <div className="flex-1 overflow-auto -mx-6 px-6">
+              {qrData?.recentScans?.length > 0 ? (
+                <div className="space-y-4">
+                  {qrData.recentScans.slice(0, 50).map((scan: any, i: number) => (
+                    <div key={i} className="flex gap-4 p-3 rounded-xl hover:bg-white/5 border border-white/5 bg-black/20 transition-colors">
+                       <div className="bg-blue-500/10 p-2 rounded-lg shrink-0 h-fit">
+                          <Smartphone className="w-4 h-4 text-blue-400" />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                             <span className="text-white text-sm truncate font-medium">{scan.url}</span>
+                             <span className="text-xs text-zinc-500 whitespace-nowrap">{new Date(scan.timestamp).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+                          </div>
+                          <div className="flex gap-4 text-xs text-zinc-500 truncate">
+                             <span className="truncate max-w-[150px]" title={scan.user_agent}>UA: {scan.user_agent.substring(0, 30)}...</span>
+                             {scan.referrer && scan.referrer !== 'direct' && <span>Ref: {scan.referrer}</span>}
+                          </div>
+                       </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex items-center justify-center text-zinc-500 h-[200px]">No recent scans found.</div>
+              )}
             </div>
           </div>
         </div>

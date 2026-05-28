@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useLayoutEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { Route, Routes, BrowserRouter as Router, useLocation } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { Toaster } from '@/components/ui/toaster';
@@ -11,14 +11,20 @@ const AdminPage = lazy(() => import('./pages/AdminPage'));
 
 const PageTracker = () => {
   const { pathname } = useLocation();
-  useLayoutEffect(() => {
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     if (!pathname.startsWith('/whtadmin')) {
-      fetch('/api/track-visit', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ path: pathname })
-      }).catch(() => {});
+      let active = true;
+      const t = setTimeout(() => {
+        if (active) {
+          fetch('/api/track-visit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: pathname })
+          }).catch(() => {});
+        }
+      }, 100);
+      return () => { active = false; clearTimeout(t); };
     }
   }, [pathname]);
   return null;
