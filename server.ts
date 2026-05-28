@@ -32,7 +32,8 @@ db.exec(`
     folder TEXT DEFAULT 'Uncategorized',
     tags TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    size INTEGER DEFAULT 0
+    size INTEGER DEFAULT 0,
+    file_hash TEXT
   );
   CREATE TABLE IF NOT EXISTS revisions (
     id TEXT PRIMARY KEY,
@@ -90,6 +91,8 @@ db.exec(`
 `);
 
 try { db.prepare("ALTER TABLE contact_messages ADD COLUMN is_read INTEGER DEFAULT 0").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE media ADD COLUMN size INTEGER DEFAULT 0").run(); } catch(e) {}
+try { db.prepare("ALTER TABLE media ADD COLUMN file_hash TEXT").run(); } catch(e) {}
 
 // Seed default page if pages is empty
 const pageCount = db.prepare("SELECT COUNT(*) AS count FROM pages").get() as { count: number };
@@ -104,6 +107,8 @@ if (pageCount.count === 0) {
 
 import fs from 'fs';
 import multer from 'multer';
+import crypto from 'crypto';
+import sharp from 'sharp';
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -119,7 +124,21 @@ const storage = multer.diskStorage({
     cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, ''));
   }
 });
-const upload = multer({ storage });
+
+const upload = multer({ 
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'video/mp4', 'video/webm', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Invalid file type'));
+    }
+  },
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB
+  }
+});
 
 
 // Helper to get active URL
@@ -695,24 +714,79 @@ app.get("/api/admin/media", authenticateAdmin, (req, res) => {
 });
 
 // API: Upload Media
-app.post("/api/admin/media/upload", authenticateAdmin, upload.single("file"), (req, res) => {
+app.post("/api/admin/media/upload", authenticateAdmin, (req, res, next) => {
+  upload.single("file")(req, res, (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
   if (!req.file) {
     res.status(400).json({ error: "No file uploaded." });
     return;
   }
-  const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
-  const type = req.file.mimetype.startsWith("image/") ? "image" 
+  
+  try {
+    const filePath = req.file.path;
+    let currentFilePath = filePath;
+    const fileBuffer = fs.readFileSync(filePath);
+    const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    
+    // Check for duplicate
+    const existing = db.prepare("SELECT * FROM media WHERE file_hash = ?").get(hash) as any;
+    if (existing) {
+      // Remove the uploaded duplicate file
+      fs.unlinkSync(filePath);
+      return res.json(existing);
+    }
+    
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2);
+    let type = req.file.mimetype.startsWith("image/") ? "image" 
              : req.file.mimetype.startsWith("video/") ? "video" 
              : "document";
-  const url = "/uploads/" + req.file.filename;
-  
-  db.prepare(`
-    INSERT INTO media (id, type, url, thumbnail, title, size) 
-    VALUES (?, ?, ?, ?, ?, ?)
-  `).run(id, type, url, url, req.file.originalname, req.file.size);
-  
-  const newItem = db.prepare("SELECT * FROM media WHERE id = ?").get(id);
-  res.json(newItem);
+             
+    let url = "/uploads/" + req.file.filename;
+    let thumbnailUrl = url;
+    let size = req.file.size;
+    
+    try {
+      // If it's an image, optimize it and convert to webp (unless it's an svg/gif)
+      if (type === "image" && !req.file.mimetype.includes("svg") && !req.file.mimetype.includes("gif")) {
+        const optimizedFilename = req.file.filename.split('.')[0] + '.webp';
+        const optimizedPath = path.join(uploadsDir, optimizedFilename);
+        
+        const sharpObj = sharp(fileBuffer);
+        await sharpObj.webp({ quality: 80 }).toFile(optimizedPath);
+        
+        // Delete the original uploaded file
+        fs.unlinkSync(filePath);
+        currentFilePath = optimizedPath;
+        
+        url = "/uploads/" + optimizedFilename;
+        thumbnailUrl = url;
+        // Get new size
+        size = fs.statSync(optimizedPath).size;
+      }
+      
+      db.prepare(`
+        INSERT INTO media (id, type, url, thumbnail, title, size, file_hash) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(id, type, url, thumbnailUrl, req.file.originalname, size, hash);
+      
+      logActivity("Media Upload", "admin", `Uploaded file: ${req.file.originalname}`, req.ip || req.connection.remoteAddress || 'unknown');
+      const newItem = db.prepare("SELECT * FROM media WHERE id = ?").get(id);
+      res.json(newItem);
+    } catch (innerErr) {
+      if (fs.existsSync(currentFilePath)) {
+        fs.unlinkSync(currentFilePath);
+      }
+      throw innerErr;
+    }
+  } catch (err) {
+    console.error("Upload Error:", err);
+    res.status(500).json({ error: "File upload failed" });
+  }
 });
 
 // API: Add Embed Media
@@ -725,6 +799,7 @@ app.post("/api/admin/media/embed", authenticateAdmin, (req, res) => {
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `).run(id, type, url, thumbnail || url, title || "Embed", folder || "Uncategorized", tags || "");
   
+  logActivity("Media Embed", "admin", `Embed added: ${title || "Embed"}`, req.ip || req.connection.remoteAddress || 'unknown');
   const newItem = db.prepare("SELECT * FROM media WHERE id = ?").get(id);
   res.json(newItem);
 });
@@ -741,6 +816,7 @@ app.delete("/api/admin/media/:id", authenticateAdmin, (req, res) => {
     }
   }
   db.prepare("DELETE FROM media WHERE id = ?").run(id);
+  logActivity("Media Delete", "admin", `Deleted media: ${item ? item.title : id}`, req.ip || req.connection.remoteAddress || 'unknown');
   res.json({ success: true });
 });
 
@@ -751,6 +827,7 @@ app.put("/api/admin/media/:id", authenticateAdmin, (req, res) => {
   db.prepare(`
     UPDATE media SET title = ?, folder = ?, tags = ? WHERE id = ?
   `).run(title, folder, tags, id);
+  logActivity("Media Update", "admin", `Updated metadata for media ${id}, new title: ${title}`, req.ip || req.connection.remoteAddress || 'unknown');
   res.json({ success: true });
 });
 

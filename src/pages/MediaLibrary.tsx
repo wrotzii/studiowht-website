@@ -24,6 +24,7 @@ export const MediaLibrary = () => {
   const [search, setSearch] = useState('');
   const [activeFolder, setActiveFolder] = useState('All');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MediaItem | null>(null);
   const { toast } = useToast();
 
   const fetchMedia = async () => {
@@ -147,13 +148,16 @@ export const MediaLibrary = () => {
                     </div>
                   )}
                   
-                  {/* Overlay */}
+                   {/* Overlay */}
                   <div className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-between backdrop-blur-sm">
                     <div className="flex justify-end gap-2">
-                       <a href={item.url} target="_blank" rel="noreferrer" className="text-white bg-white/20 p-1.5 rounded-md hover:bg-white/30 transition-colors">
+                       <a href={item.url} target="_blank" rel="noreferrer" className="text-white bg-white/20 p-1.5 rounded-md hover:bg-white/30 transition-colors" title="Open in new tab">
                           <ExternalLink className="w-4 h-4" />
                        </a>
-                       <button onClick={() => handleDelete(item.id)} className="text-red-400 bg-red-500/20 p-1.5 rounded-md hover:bg-red-500/40 transition-colors">
+                       <button onClick={() => setEditingItem(item)} className="text-blue-400 bg-blue-500/20 p-1.5 rounded-md hover:bg-blue-500/40 transition-colors" title="Edit Metadata">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-edit-2 w-4 h-4"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                       </button>
+                       <button onClick={() => handleDelete(item.id)} className="text-red-400 bg-red-500/20 p-1.5 rounded-md hover:bg-red-500/40 transition-colors" title="Delete">
                           <Trash2 className="w-4 h-4" />
                        </button>
                     </div>
@@ -170,7 +174,74 @@ export const MediaLibrary = () => {
       </div>
 
       <AddMediaModal isOpen={isAddOpen} onClose={() => setIsAddOpen(false)} onAdded={(m) => setMedia([m, ...media])} />
+      {editingItem && (
+        <EditMediaModal 
+          item={editingItem} 
+          isOpen={!!editingItem} 
+          onClose={() => setEditingItem(null)} 
+          onUpdated={(m) => {
+            setMedia(media.map(prev => prev.id === m.id ? m : prev));
+          }} 
+        />
+      )}
     </div>
+  );
+};
+
+const EditMediaModal = ({ item, isOpen, onClose, onUpdated }: { item: MediaItem, isOpen: boolean, onClose: () => void, onUpdated: (m: MediaItem) => void }) => {
+  const [title, setTitle] = useState(item.title || '');
+  const [folder, setFolder] = useState(item.folder || 'Uncategorized');
+  const [tags, setTags] = useState(item.tags || '');
+  const [saving, setSaving] = useState(false);
+  const { toast } = useToast();
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/admin/media/${item.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, folder, tags })
+      });
+      if (res.ok) {
+        toast({ title: 'Success', description: 'Media updated' });
+        onUpdated({ ...item, title, folder, tags });
+        onClose();
+      } else {
+        throw new Error();
+      }
+    } catch {
+      toast({ title: 'Error', description: 'Update failed', variant: 'destructive' });
+    }
+    setSaving(false);
+  };
+
+  return (
+    <Dialog.Root open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 bg-black/80 z-50 backdrop-blur-sm" />
+        <Dialog.Content className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-zinc-950 border border-white/10 rounded-2xl p-6 z-50 shadow-2xl">
+          <Dialog.Title className="text-xl font-bold text-white mb-4">Edit Media Details</Dialog.Title>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Title</Label>
+              <Input placeholder="File name or description" value={title} onChange={e => setTitle(e.target.value)} className="bg-white/5 border-white/10" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Folder</Label>
+              <Input placeholder="E.g., Images, Documents, Videos" value={folder} onChange={e => setFolder(e.target.value)} className="bg-white/5 border-white/10" />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-zinc-400">Tags (comma separated)</Label>
+              <Input placeholder="E.g., hero, banner, mobile" value={tags} onChange={e => setTags(e.target.value)} className="bg-white/5 border-white/10" />
+            </div>
+            <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white" onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </div>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
   );
 };
 
@@ -182,27 +253,55 @@ const AddMediaModal = ({ isOpen, onClose, onAdded }: { isOpen: boolean, onClose:
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [uploadProgress, setUploadProgress] = useState(0);
+
+  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
+    setUploadProgress(0);
     const formData = new FormData();
     formData.append('file', file);
     
-    try {
-      const res = await fetch('/api/admin/media/upload', { method: 'POST', body: formData });
-      const data = await res.json();
-      if (res.ok) {
-        onAdded(data);
-        toast({ title: 'Success', description: 'File uploaded' });
-        onClose();
-      } else {
-        throw new Error();
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/admin/media/upload', true);
+    
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percentComplete);
       }
-    } catch {
+    };
+    
+    xhr.onload = () => {
+      if (xhr.status === 200) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          onAdded(data);
+          toast({ title: 'Success', description: 'File uploaded' });
+          onClose();
+        } catch (err) {
+          toast({ title: 'Error', description: 'Failed to parse response', variant: 'destructive' });
+        }
+      } else {
+        let errMsg = 'Upload failed';
+        try {
+          const errData = JSON.parse(xhr.responseText);
+          if (errData.error) errMsg = errData.error;
+        } catch {}
+        toast({ title: 'Error', description: errMsg, variant: 'destructive' });
+      }
+      setUploading(false);
+      setUploadProgress(0);
+    };
+    
+    xhr.onerror = () => {
       toast({ title: 'Error', description: 'Upload failed', variant: 'destructive' });
-    }
-    setUploading(false);
+      setUploading(false);
+      setUploadProgress(0);
+    };
+    
+    xhr.send(formData);
   };
 
   const handleEmbed = async () => {
@@ -264,7 +363,17 @@ const AddMediaModal = ({ isOpen, onClose, onAdded }: { isOpen: boolean, onClose:
                   disabled={uploading}
                 />
               </div>
-              {uploading && <p className="text-sm text-emerald-500 text-center animate-pulse">Uploading...</p>}
+              {uploading && (
+                <div className="space-y-2 mt-4">
+                  <div className="flex justify-between text-xs text-zinc-400">
+                    <span>Uploading...</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="w-full bg-zinc-800 rounded-full h-2">
+                    <div className="bg-emerald-500 h-2 rounded-full transition-all duration-300" style={{ width: `${uploadProgress}%` }}></div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
